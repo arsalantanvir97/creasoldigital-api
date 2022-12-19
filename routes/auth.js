@@ -71,9 +71,7 @@ authRoutes.post("/login", async (req, res) => {
             const token = jwt.sign(
                 { user_id: user._id, email },
                 process.env.TOKEN_KEY,
-                {
-                    expiresIn: "2h",
-                }
+                { expiresIn: "1y" }
             );
 
             // save user token

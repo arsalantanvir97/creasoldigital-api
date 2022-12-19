@@ -8,6 +8,7 @@ router.get("/users", auth, async (req, res) => {
     const { query } = req;
 
     var page = parseInt(query.page) || 1; //for next page pass 1 here
+    
     var perPage = parseInt(query.perPage) || 5;
 
     var filter = {
