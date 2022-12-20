@@ -59,6 +59,8 @@ router.post('/create-portal-session', async (req, res) => {
 
     const checkoutSession = await stripe.checkout.sessions.retrieve(session_id);
     
+    const {customer} = checkoutSession;
+
     console.log(checkoutSession);
     try {
         
