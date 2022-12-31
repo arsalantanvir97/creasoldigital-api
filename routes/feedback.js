@@ -1,0 +1,66 @@
+const express = require("express");
+const router = express.Router();
+const auth = require("../middleware/auth");
+const Feedback = require("../model/feedback");
+
+router.get("/feedback", auth, async (req, res) => {
+  const { query } = req;
+
+  var page = parseInt(query.page) || 1; //for next page pass 1 here
+  var perPage = parseInt(query.page) || 10;
+
+  var filter = {};
+  if (query.q) {
+    filter = { name: { $regex: query.q, $options: "i" } };
+  }
+
+  var top = parseInt(query.top);
+  if (!isNaN(top)) {
+    perPage = top;
+    page = 1;
+  }
+
+  const count = await Feedback.find(filter).countDocuments();
+
+  const data = await Feedback.find(filter, query.fields ? query.fields : null, {
+    limit: perPage,
+    skip: (page - 1) * perPage,
+  });
+
+  res.status(200).send({
+    total: count,
+    data,
+    currentPage: page,
+    perPage,
+    totalPages: Math.ceil(count / perPage),
+    hasNextPage: page < Math.ceil(count / page),
+    hasPrevPage: page > 1,
+  });
+});
+
+router.post("/feedback", async (req, res) => {
+  try {
+    // Get user input
+    const { name, email, subject, description } = req.body;
+
+    // Validate user input
+    if (!(name && email && subject && description)) {
+      res.status(400).send("All inputs are required");
+    }
+
+    // Create feebback in our database
+    const feedback = await Feedback.create({
+      name,
+      email: email.toLowerCase(), // sanitize: convert email to lowercase
+      subject,
+      description,
+    });
+
+    // return new user
+    res.status(201).json(feedback);
+  } catch (err) {
+    console.log(err);
+  }
+});
+
+module.exports = router;

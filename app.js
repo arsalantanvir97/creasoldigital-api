@@ -2,47 +2,53 @@ require("dotenv").config();
 require("./config/database").connect();
 const express = require("express");
 const app = express();
+const cors = require("cors");
+const fileUpload = require("express-fileupload");
+const path = require("path");
+var bodyParser = require("body-parser");
 
-var bodyParser = require('body-parser');
+app.use(fileUpload());
 
+app.use(cors());
 // app.use(bodyParser.json()); // for parsing application/json
 app.use(bodyParser.urlencoded({ extended: true })); // for parsing application/x-www-form-urlencoded
-
+///
 app.use(express.json());
 
 var routesPath = require("path").join(__dirname, "routes");
 
 require("fs")
-    .readdirSync(routesPath)
-    .forEach((file) => app.use('/api', require("./routes/" + file)));
+  .readdirSync(routesPath)
+  .forEach((file) => app.use("/api", require("./routes/" + file)));
 
-
-app.get('/payment', (req, res) => {
-    res.sendFile('views/payment.html', {root: __dirname })
+app.get("/payment", (req, res) => {
+  res.sendFile("views/payment.html", { root: __dirname });
 });
 
-
-app.get('/recurring-payment', (req, res) => {
-    res.sendFile('views/recurring-payment.html', {root: __dirname })
+app.get("/recurring-payment", (req, res) => {
+  res.sendFile("views/recurring-payment.html", { root: __dirname });
 });
 
-app.get('/success', (req, res) => {
-    res.sendFile('views/success.html', {root: __dirname })
+app.get("/success", (req, res) => {
+  res.sendFile("views/success.html", { root: __dirname });
 });
 
-app.get('/cancel', (req, res) => {
-    res.sendFile('views/cancel.html', {root: __dirname })
+app.get("/cancel", (req, res) => {
+  res.sendFile("views/cancel.html", { root: __dirname });
 });
-        
+
+const directory = path.join(__dirname, "images");
+app.use("/profiles", express.static(directory));
+
 app.use("*", (req, res) => {
-    res.status(404).json({
-        success: "false",
-        message: "Page not found",
-        error: {
-            statusCode: 404,
-            message: "You reached a route that is not defined on this server",
-        },
-    });
+  res.status(404).json({
+    success: "false",
+    message: "Page not found",
+    error: {
+      statusCode: 404,
+      message: "You reached a route that is not defined on this server",
+    },
+  });
 });
 
 module.exports = app;
