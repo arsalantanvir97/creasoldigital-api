@@ -37,8 +37,10 @@ app.get("/cancel", (req, res) => {
   res.sendFile("views/cancel.html", { root: __dirname });
 });
 
-const directory = path.join(__dirname, "images");
-app.use("/profiles", express.static(directory));
+const profileDirectory = path.join(__dirname, "images");
+const postDirectory = path.join(__dirname, "post-images");
+app.use("/profiles", express.static(profileDirectory));
+app.use("/post", express.static(postDirectory));
 
 app.use("*", (req, res) => {
   res.status(404).json({

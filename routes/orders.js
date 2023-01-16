@@ -1,156 +1,137 @@
 const express = require("express");
 const router = express.Router();
 const auth = require("../middleware/auth");
-const Package = require("../model/package");
-const stripe = require("stripe")('sk_test_51BMBBHHnBzjYlOyyrJhinyo8gYbJdLZeOggeXqT77f5QM9blFw0ANdKzmzIGKsBvYYYgOtS1gqgwJQpDKS1RmAE300NravtYBe');
-
-router.post("/create-payment-intent", async (req, res) => {
-    const { items } = req.body;
-
-    const paymentIntent = await stripe.paymentIntents.create({
-        amount: 1000,
-        currency: "usd",
-        automatic_payment_methods: {
-            enabled: true,
-        },
-    });
-
-    res.send({
-        clientSecret: paymentIntent.client_secret,
-    });
-
-});
-
-router.post('/create-checkout-session', async (req, res) => {
-
-    const prices = await stripe.prices.list({
-        lookup_keys: [req.body.lookup_key],
-        expand: ['data.product'],
-    });
-    const session = await stripe.checkout.sessions.create({
-        billing_address_collection: 'auto',
-        line_items: [
-            {
-                price: prices.data[0].id,
-                // For metered billing, do not pass quantity
-                quantity: 1,
-
-            },
-        ],
-        mode: 'subscription',
-        success_url: `${process.env.APP_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${process.env.APP_URL}/cancel`,
-    });
-
-    res.redirect(303, session.url);
-});
-
-router.get('sessions', async (req, res) => {
-    const session = await stripe.billingPortal.sessions.create({
-        customer: 'cus_BxIM2md7xZC3hr',
-        return_url: 'http://example.com/account',
-    });
-})
-
-router.post('/create-portal-session', async (req, res) => {
-    // For demonstration purposes, we're using the Checkout session to retrieve the customer ID.
-    // Typically this is stored alongside the authenticated user in your database.
-    const { session_id } = req.body;
-
-    const checkoutSession = await stripe.checkout.sessions.retrieve(session_id);
-    
-    const {customer} = checkoutSession;
-
-    console.log(checkoutSession);
-    try {
-        
-        // This is the url to which the customer will be redirected when they are done
-        // managing their billing with the portal.
-        const returnUrl = process.env.APP_URL;
-        
-        const portalSession = await stripe.billingPortal.sessions.create({
-            customer: checkoutSession.customer,
-            return_url: returnUrl,
-        });
-        
-        res.redirect(303, portalSession.url);
-    } catch (error) {
-        console.log(error.message)
-        res.status(500).send(error.message);
-    }
-});
-
-router.post('/webhook',
-    express.raw({ type: 'application/json' }),
-    (request, response) => {
-        let event = request.body;
-        // Replace this endpoint secret with your endpoint's unique secret
-        // If you are testing with the CLI, find the secret by running 'stripe listen'
-        // If you are using an endpoint defined with the API or dashboard, look in your webhook settings
-        // at https://dashboard.stripe.com/webhooks
-        const endpointSecret = 'whsec_12345';
-        // Only verify the event if you have an endpoint secret defined.
-        // Otherwise use the basic event deserialized with JSON.parse
-        if (endpointSecret) {
-            // Get the signature sent by Stripe
-            const signature = request.headers['stripe-signature'];
-            try {
-                event = stripe.webhooks.constructEvent(
-                    request.body,
-                    signature,
-                    endpointSecret
-                );
-            } catch (err) {
-                console.log(`⚠️  Webhook signature verification failed.`, err.message);
-                return response.sendStatus(400);
-            }
-        }
-        let subscription;
-        let status;
-        // Handle the event
-        switch (event.type) {
-            case 'customer.subscription.trial_will_end':
-                subscription = event.data.object;
-                status = subscription.status;
-                console.log(`Subscription status is ${status}.`);
-                // Then define and call a method to handle the subscription trial ending.
-                // handleSubscriptionTrialEnding(subscription);
-                break;
-            case 'customer.subscription.deleted':
-                subscription = event.data.object;
-                status = subscription.status;
-                console.log(`Subscription status is ${status}.`);
-                // Then define and call a method to handle the subscription deleted.
-                // handleSubscriptionDeleted(subscriptionDeleted);
-                break;
-            case 'customer.subscription.created':
-                subscription = event.data.object;
-                status = subscription.status;
-                console.log(`Subscription status is ${status}.`);
-                // Then define and call a method to handle the subscription created.
-                // handleSubscriptionCreated(subscription);
-                break;
-            case 'customer.subscription.updated':
-                subscription = event.data.object;
-                status = subscription.status;
-                console.log(`Subscription status is ${status}.`);
-                // Then define and call a method to handle the subscription update.
-                // handleSubscriptionUpdated(subscription);
-                break;
-            default:
-                // Unexpected event type
-                console.log(`Unhandled event type ${event.type}.`);
-        }
-        // Return a 200 response to acknowledge receipt of the event
-        response.send();
-    }
-);
-
+// const Package = require("../model/package");
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+const { v4: uuid } = require("uuid");
+const { default: Stripe } = require("stripe");
+const User = require("../model/user");
+const Order = require("../model/order");
 
 router.get("/orders", auth, async (req, res) => {
-    const packages = await Package.find({});
+  const user = await User.findById(req.user.user_id);
+  const { query } = req;
 
-    return res.status(201).send(packages);
+  var page = parseInt(query.page) || 1; //for next page pass 1 here
+  var perPage = parseInt(query.perPage) || 10;
+
+  var filter = {};
+  if (!user.is_admin) {
+    filter.user = user._id;
+  }
+
+  console.log(filter);
+  console.log(user);
+
+  var top = parseInt(query.top);
+  if (!isNaN(top)) {
+    perPage = top;
+    page = 1;
+  }
+  console.log("order listing called");
+
+  const count = await Order.find(filter).countDocuments();
+
+  let data = {};
+  if (user.is_admin) {
+    data = await Order.find(filter, query.fields ? query.fields : null, {
+      limit: perPage,
+      skip: (page - 1) * perPage,
+    }).populate("user");
+  } else {
+    data = await Order.find(filter, query.fields ? query.fields : null, {
+      limit: perPage,
+      skip: (page - 1) * perPage,
+    });
+  }
+
+  res.status(200).send({
+    total: count,
+    data,
+    currentPage: page,
+    perPage,
+    totalPages: Math.ceil(count / perPage),
+    hasNextPage: page < Math.ceil(count / page),
+    hasPrevPage: page > 1,
+  });
+});
+
+router.get("/order/:id?", auth, async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id)
+      .populate("user")
+      .populate("posts");
+    console.log("Order Fetched");
+    console.log(order);
+    return res.status(200).send(order);
+  } catch (error) {
+    return res.status(500).send(error);
+  }
+});
+router.post("/payment", auth, async (req, res) => {
+  const { pkg: product, stripe_token: token } = req.body;
+  const { user } = req;
+  try {
+    // Check if customer already exist in stripe
+    let customer = await stripe.customers.search({
+      query: `email:'${token.email}'`,
+    });
+    if (customer.data.length === 0) {
+      customer = await stripe.customers.create({
+        email: token.email,
+        source: token.id,
+      });
+      console.log("Customer Created ");
+      console.log(customer);
+    } else {
+      customer = customer.data[0];
+      console.log("Already Existed Created ");
+      console.log(customer);
+    }
+    await createCharges(customer, product, token);
+    console.log("Charges Created Successfully");
+    const newlyCreatedOrder = await Order.create(
+      getOrderToCreate(user, product)
+    );
+    console.log("Order Created Successfully");
+    console.log(newlyCreatedOrder);
+    return res.status(200).json(newlyCreatedOrder);
+  } catch (error) {
+    return res.status(400).json(error);
+  }
+});
+
+const getOrderToCreate = (user, product) => {
+  const neworder = {
+    user: user.user_id,
+    payment_type: "Non Recurrent",
+    pkg_name: product.name,
+    pkg_price: product.price,
+    pkg_description: product.description,
+    pkg_duration: product.duration,
+    pkg_interval: product.interval,
+    medium: "Facebook",
+    form_status: "Not Submitted",
+    status: "Active",
+  };
+  return neworder;
+};
+
+const createCharges = (customer, product, token) => {
+  const charge = stripe.charges.create({
+    amount: product.price * 100,
+    currency: "usd",
+    customer: customer.id,
+    receipt_email: token.email,
+    description: `${product.name}`,
+  });
+  // console.log(charge);
+  return charge;
+  // .then((result) => res.status(200).json(result));
+};
+
+router.get("/test", async (req, res) => {
+  res.send("test");
 });
 
 module.exports = router;

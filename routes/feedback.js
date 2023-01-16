@@ -7,7 +7,7 @@ router.get("/feedback", auth, async (req, res) => {
   const { query } = req;
 
   var page = parseInt(query.page) || 1; //for next page pass 1 here
-  var perPage = parseInt(query.page) || 10;
+  var perPage = parseInt(query.perPage) || 10;
 
   var filter = {};
   if (query.q) {
@@ -38,7 +38,7 @@ router.get("/feedback", auth, async (req, res) => {
   });
 });
 
-router.post("/feedback", async (req, res) => {
+router.post("/feedback", auth, async (req, res) => {
   try {
     // Get user input
     const { name, email, subject, description } = req.body;
@@ -56,10 +56,36 @@ router.post("/feedback", async (req, res) => {
       description,
     });
 
-    // return new user
+    // return new feedback
     res.status(201).json(feedback);
   } catch (err) {
     console.log(err);
+  }
+});
+
+router.get("/feedback/:id", auth, async (req, res) => {
+  try {
+    // Get userid params
+    const feedbackid = req.params.id;
+    console.log(feedbackid);
+    const { query } = req;
+    // console.log(query);
+    const feedback = await Feedback.findById(
+      feedbackid,
+      query.fields ? query.fields : null
+    );
+    // console.log(feedback);
+    if (feedback) {
+      res.status(200).json({
+        feedback,
+      });
+    } else {
+      res.status(404).json({
+        message: "Feedback not found",
+      });
+    }
+  } catch (error) {
+    res.status(500).json(error);
   }
 });
 
