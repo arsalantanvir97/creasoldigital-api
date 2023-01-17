@@ -3,22 +3,31 @@ const router = express.Router();
 const auth = require("../middleware/auth");
 
 const User = require("../model/user");
+const comment = require("../model/comment");
 const Order = require("../model/order");
 const post = require("../model/post");
 
 // Get a single post
 router.get("/post/:id", auth, async (req, res) => {
   try {
-    const { id } = req.params.id;
+    const { id } = req.params;
     const PostToSend = await post
       .findById(id)
       .populate("user")
-      .populate("comments");
+      .populate({
+        path: "comments",
+        populate: {
+          path: "user",
+          select: "-password",
+          model: "user",
+        },
+      });
     console.log("Post Fetched");
     console.log(PostToSend);
-    return res.status(200).send(PostToSend);
+    return res.status(200).json(PostToSend);
   } catch (error) {
-    return res.status(500).send(error);
+    console.log(error);
+    return res.status(500).json(error);
   }
 });
 
@@ -48,6 +57,26 @@ router.post("/post", auth, async (req, res) => {
     // return res.status(201).json({});
   } catch (error) {
     console.log(error);
+    return res.status(500).json(error);
+  }
+});
+
+router.put("/post/:id?", auth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    // const { title, description, status, post_medium } = req.body;
+    console.log(id);
+    console.log({ ...req.body });
+    const updatedPost = await post.findByIdAndUpdate(
+      id,
+      { ...req.body },
+      {
+        new: true,
+      }
+    );
+    console.log(updatedPost);
+    return res.status(204).json(updatedPost);
+  } catch (error) {
     return res.status(500).json(error);
   }
 });
