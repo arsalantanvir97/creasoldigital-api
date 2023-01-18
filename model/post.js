@@ -22,7 +22,7 @@ const Post = new mongoose.Schema(
     description: { type: String, required: true },
     status: { type: String, required: true },
     post_medium: { type: String, required: true },
-    image: { type: String },
+    images: { type: Array, default: [] },
   },
   {
     timestamps: true,

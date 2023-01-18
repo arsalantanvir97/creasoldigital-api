@@ -40,7 +40,7 @@ app.get("/cancel", (req, res) => {
 const profileDirectory = path.join(__dirname, "images");
 const postDirectory = path.join(__dirname, "post-images");
 app.use("/profiles", express.static(profileDirectory));
-app.use("/post", express.static(postDirectory));
+app.use("/post-images", express.static(postDirectory));
 
 app.use("*", (req, res) => {
   res.status(404).json({
