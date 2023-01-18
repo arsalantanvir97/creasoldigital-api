@@ -7,6 +7,7 @@ const comment = require("../model/comment");
 const Order = require("../model/order");
 const post = require("../model/post");
 const { v4: uuid } = require("uuid");
+const { GetUser, NotificationType, createNotification } = require("../helpers");
 
 // Get a single post
 router.get("/post/:id", auth, async (req, res) => {
@@ -64,6 +65,7 @@ router.post("/post", auth, async (req, res) => {
 
 router.put("/post/:id?", auth, async (req, res) => {
   try {
+    const authUser = await GetUser(req.user.user_id);
     const { id } = req.params;
     // const { title, description, status, post_medium } = req.body;
     console.log(id);
@@ -76,6 +78,28 @@ router.put("/post/:id?", auth, async (req, res) => {
       }
     );
     console.log(updatedPost);
+    // Sending Notification
+    let NotificationData = {};
+    // User will see those notification in which isAdmin is true and user fields of the notification matched with the logged in user.
+    if (authUser.is_admin) {
+      NotificationData = {
+        created_by: authUser._id,
+        user: updatedPost.user,
+        post: updatedPost._id,
+        order: updatedPost.order,
+        notification_type: NotificationType.PostUpdate,
+        isAdmin: authUser.is_admin,
+      };
+    } else {
+      NotificationData = {
+        user: authUser._id,
+        post: updatedPost._id,
+        order: updatedPost.order,
+        notification_type: NotificationType.PostUpdate,
+        isAdmin: false,
+      };
+    }
+    const Notification = await createNotification(NotificationData);
     return res.status(204).json(updatedPost);
   } catch (error) {
     return res.status(500).json(error);
@@ -86,6 +110,7 @@ router.put("/post-images/:id?", auth, async (req, res) => {
   try {
     const { id: PostId } = req.params;
     if (req.files) {
+      const authUser = await GetUser(req.user.user_id);
       const { files } = req;
       console.log(files["profile[0]"]);
       const FileKeys = Object.keys(files);
@@ -124,6 +149,31 @@ router.put("/post-images/:id?", auth, async (req, res) => {
         images: updatedPost.images,
       };
       console.log("Data", DataToSend);
+
+      // Sending Notification
+      let NotificationData = {};
+      // User will see those notification in which isAdmin is true and user fields of the notification matched with the logged in user.
+      if (authUser.is_admin) {
+        NotificationData = {
+          created_by: authUser._id,
+          user: updatedPost.user,
+          post: updatedPost._id,
+          order: updatedPost.order,
+          notification_type: NotificationType.PostUpdate,
+          isAdmin: authUser.is_admin,
+        };
+      }
+      // else {
+      //   NotificationData = {
+      //     user: authUser._id,
+      //     post: updatedPost._id,
+      //     order: updatedPost.order,
+      //     notification_type: NotificationType.PostUpdate,
+      //     isAdmin: false,
+      //   };
+      // }
+      const Notification = await createNotification(NotificationData);
+
       res.status(200).json(DataToSend);
     } else {
       res.status(400).json({

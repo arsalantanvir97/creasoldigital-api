@@ -1,7 +1,9 @@
 const { response } = require("express");
 const express = require("express");
+const { GetUser } = require("../helpers");
 const router = express.Router();
 const auth = require("../middleware/auth");
+const notification = require("../model/notification");
 const User = require("../model/user");
 
 router.get("/users", auth, async (req, res) => {
@@ -131,6 +133,55 @@ router.get("/user/:id?", auth, async (req, res) => {
   const user = await User.findById(userId);
   delete user.password;
   res.json(user);
+});
+
+router.get("/notification", auth, async (req, res) => {
+  try {
+    const authUser = await GetUser(req.user.user_id);
+    let Notification;
+    if (authUser.is_admin) {
+      // Admin will always get notification where isAdmin field of notification is false
+      Notification = await notification
+        .find({ isAdmin: false })
+        .populate({
+          path: "user",
+          select: "-password",
+        })
+        .populate({
+          path: "created_by",
+          select: "-password",
+        });
+      // .exec(function (err, items) {
+      //   if (err) console.log(err);
+      //   Notification = items;
+      //   console.log(Notification);
+      // });
+    } else {
+      // Admin will always get notification where isAdmin field of notification is true and also the user field of the notification is matched with authUser._id
+      Notification = await notification
+        .where("isAdmin")
+        .equals(true)
+        .where("user")
+        .equals(authUser._id)
+        .populate({
+          path: "user",
+          select: "-password",
+        })
+        .populate({
+          path: "created_by",
+          select: "-password",
+        });
+    }
+    Notification.sort(function (a, b) {
+      // Turn your strings into dates, and then subtract them
+      // to get a value that is either negative, positive, or zero.
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    });
+    return res.status(200).json(Notification);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json(error);
+  }
 });
 
 // router.delete("/users/:id", (req, res) => {

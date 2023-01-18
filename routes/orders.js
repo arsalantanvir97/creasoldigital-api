@@ -7,6 +7,7 @@ const { v4: uuid } = require("uuid");
 const { default: Stripe } = require("stripe");
 const User = require("../model/user");
 const Order = require("../model/order");
+const { createNotification, NotificationType } = require("../helpers");
 
 router.get("/orders", auth, async (req, res) => {
   const user = await User.findById(req.user.user_id);
@@ -37,12 +38,13 @@ router.get("/orders", auth, async (req, res) => {
     data = await Order.find(filter, query.fields ? query.fields : null, {
       limit: perPage,
       skip: (page - 1) * perPage,
+      sort: { createdAt: -1 },
     }).populate("user");
   } else {
-    data = await Order.find(filter, query.fields ? query.fields : null, {
-      limit: perPage,
-      skip: (page - 1) * perPage,
-    });
+    data = await Order.find(filter, query.fields ? query.fields : null)
+      .sort({ createdAt: -1 })
+      .limit(perPage)
+      .skip((page - 1) * perPage);
   }
 
   res.status(200).send({
@@ -60,7 +62,7 @@ router.get("/order/:id?", auth, async (req, res) => {
   try {
     const order = await Order.findById(req.params.id)
       .populate("user")
-      .populate("posts");
+      .populate({ path: "posts", options: { sort: { updatedAt: -1 } } });
     console.log("Order Fetched");
     console.log(order);
     return res.status(200).send(order);
@@ -93,11 +95,19 @@ router.post("/payment", auth, async (req, res) => {
     const newlyCreatedOrder = await Order.create(
       getOrderToCreate(user, product)
     );
+    const Notification = await createNotification({
+      user: user.user_id,
+      order: newlyCreatedOrder._id,
+      notification_type: NotificationType.Purchase,
+    });
     console.log("Order Created Successfully");
     console.log(newlyCreatedOrder);
-    return res.status(200).json(newlyCreatedOrder);
+    console.log("Notification");
+    console.log(Notification);
+    return res.status(201).json(newlyCreatedOrder);
   } catch (error) {
-    return res.status(400).json(error);
+    console.log(error);
+    return res.status(500).json(error);
   }
 });
 
