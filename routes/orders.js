@@ -7,7 +7,8 @@ const { v4: uuid } = require("uuid");
 const { default: Stripe } = require("stripe");
 const User = require("../model/user");
 const Order = require("../model/order");
-const { createNotification, NotificationType } = require("../helpers");
+const { createNotification, NotificationType, GetUser } = require("../helpers");
+const payments = require("../model/payments");
 
 router.get("/orders", auth, async (req, res) => {
   const user = await User.findById(req.user.user_id);
@@ -92,9 +93,14 @@ router.post("/payment", auth, async (req, res) => {
     }
     await createCharges(customer, product, token);
     console.log("Charges Created Successfully");
-    const newlyCreatedOrder = await Order.create(
-      getOrderToCreate(user, product)
-    );
+    const orderToCreate = getOrderToCreate(user, product);
+    const newlyCreatedOrder = await Order.create(orderToCreate);
+    const newlyCreatedPayment = await payments.create({
+      amount: product.price,
+      order: newlyCreatedOrder._id,
+      payment_type: orderToCreate.payment_type,
+      user: orderToCreate.user,
+    });
     const Notification = await createNotification({
       user: user.user_id,
       order: newlyCreatedOrder._id,
@@ -110,6 +116,79 @@ router.post("/payment", auth, async (req, res) => {
     return res.status(500).json(error);
   }
 });
+router.get("/get-user-payments", auth, async (req, res) => {
+  try {
+    const authUser = await GetUser(req.user.user_id);
+    const { start, end } = req.query;
+    const filter = { createdAt: {} };
+
+    if (!authUser.is_admin) {
+      filter.user = authUser._id;
+    }
+    if (start) {
+      const [sMonth, sYear] = start.split(",");
+      console.log(sMonth);
+      console.log(sYear);
+      filter.createdAt.$gte = new Date(sYear, sMonth - 1, 1);
+    }
+    if (end) {
+      const [eMonth, eYear] = end.split(",");
+      console.log(eMonth);
+      console.log(eYear);
+      filter.createdAt.$lt = new Date(
+        eYear,
+        eMonth - 1,
+        getMonthwiseMaxDates(eYear)[eMonth - 1],
+        23,
+        59,
+        59,
+        999
+      );
+    }
+    if (!Object.keys(filter.createdAt).length) {
+      delete filter.createdAt;
+    }
+    console.log(filter);
+    const UserPayments = await payments
+      .find(filter)
+      .populate("order")
+      .populate({
+        path: "user",
+        select: "-password",
+      });
+    console.log(UserPayments);
+    return res.status(200).json(UserPayments);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json(error);
+  }
+});
+
+const getMonthwiseMaxDates = (year) => {
+  const monthwiseMaxdates = {
+    0: 31,
+    1: isLeapyear(year) ? 28 : 29,
+    2: 31,
+    3: 30,
+    4: 31,
+    5: 30,
+    6: 31,
+    7: 31,
+    8: 30,
+    9: 31,
+    10: 30,
+    11: 31,
+  };
+  return monthwiseMaxdates;
+};
+
+const isLeapyear = (year) => {
+  if (year % 4 == 0 || (year % 400 == 0 && year % 1000 != 0)) {
+    return true;
+  } else {
+    return false;
+  }
+};
 
 const getOrderToCreate = (user, product) => {
   const neworder = {
