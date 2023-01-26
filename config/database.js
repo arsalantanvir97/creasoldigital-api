@@ -2,8 +2,6 @@ const mongoose = require("mongoose");
 
 const { MONGO_URI } = process.env;
 
-console.log(MONGO_URI);
-
 exports.connect = async () => {
     console.log('trying to connect db')
     // Connecting to the database
