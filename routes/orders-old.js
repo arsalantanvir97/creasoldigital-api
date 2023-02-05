@@ -4,6 +4,12 @@ const auth = require("../middleware/auth");
 const Package = require("../model/package");
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
+router.get("/stripe-config", (req, res) => {
+  res.send({
+    publishableKey: process.env.STRIPE_PUBLIC_KEY,
+  });
+});
+
 router.post("/create-payment-intent", async (req, res) => {
   const { items } = req.body;
 

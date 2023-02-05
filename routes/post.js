@@ -53,6 +53,44 @@ router.post("/post", auth, async (req, res) => {
       order: RelatedOrder._id,
     };
     const NewlyAddedPost = await post.create(PostToAdd);
+
+    if (req.files) {
+      const authUser = await GetUser(req.user.user_id);
+      const { files } = req;
+      console.log(files["profile[0]"]);
+      const FileKeys = Object.keys(files);
+      console.log(FileKeys);
+      const uploadPath = "/post-images/" + NewlyAddedPost._id + "_";
+      const filesSaved = [];
+      FileKeys.forEach((key) => {
+        let file = files[key];
+        console.log(file);
+        const FileNameToSave =
+          uploadPath + uuid() + "." + file.name.split(".")[1];
+        file.mv(process.cwd() + FileNameToSave, function (err) {
+          if (err) return res.status(500).json(err);
+        });
+        filesSaved.push(FileNameToSave);
+      });
+
+      console.log(filesSaved);
+      const FetchedPost = await post.findById(NewlyAddedPost._id);
+      FetchedPost.images = filesSaved;
+      const updatedPost = await post.findByIdAndUpdate(
+        NewlyAddedPost._id,
+        {
+          // $push: { image: { $each: [...filesSaved] } },
+          images: FetchedPost.images,
+        },
+        {
+          new: true,
+          // upsert: true,
+        }
+      );
+      console.log(updatedPost);
+ 
+    }
+
     RelatedOrder.posts.push(NewlyAddedPost._id);
     await Order.findByIdAndUpdate(OrderId, { posts: RelatedOrder.posts });
     return res.status(201).json(NewlyAddedPost);
