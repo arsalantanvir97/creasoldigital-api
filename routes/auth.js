@@ -72,6 +72,8 @@ authRoutes.post("/login", async (req, res) => {
     // Validate if user exist in our database
     const user = await User.findOne({ email });
 
+    if (!user.status) return res.status(400).send("User Inactive");
+
     if (user && (await bcrypt.compare(password, user.password))) {
       // Create token
       const token = jwt.sign(
@@ -116,12 +118,12 @@ authRoutes.post("/forget-password", async (req, res) => {
     code,
   });
 
-  sendEmail("forgetpassword", "arifiqbal@outlook.com", "forget email", {
+  sendEmail("forgetpassword", email, "forget email", {
     code,
   });
 
   res.status(200).send({
-    message: "email has been sent check you inbox.",
+    message: "Email has been sent check your inbox.",
   });
 });
 
@@ -173,5 +175,21 @@ authRoutes.get("/profile", auth, async (req, res) => {
 
   res.status(200).json(user);
 });
+
+// authRoutes.get("/user/:id?", auth, async (req, res) => {
+//   // console.log();
+//   try {
+//     const user = await GetUser(req.user.user_id);
+//     if (user.is_admin) {
+//       const UserToSend = await User.findOne({ email: req.user.email });
+//       delete UserToSend.password;
+//       return res.status(200).json(UserToSend);
+//     } else {
+//       return res.status(401).send("Unauthorized Request");
+//     }
+//   } catch (error) {
+//     return res.status(500).json(error);
+//   }
+// });
 
 module.exports = authRoutes;
