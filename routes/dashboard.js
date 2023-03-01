@@ -137,11 +137,18 @@ router.get("/user-dashboard", auth, async (req, res) => {
       (p) => p.status === "Pending Approval"
     ).length;
     const recentPosts = posts.slice(0, 4);
+    const chartData = {
+      approved: posts.filter((p) => p.status === "Approved").length,
+      pending: posts.filter((p) => p.status === "Pending Approval").length,
+      rejected: posts.filter((p) => p.status === "Rejected with Comments")
+        .length,
+    };
     const dashboardDataToSend = {
       subscribedPackages,
       approvedPosts,
       pendingPosts,
       recentPosts,
+      chartData,
     };
     console.log(dashboardDataToSend);
     return res.status(200).json(dashboardDataToSend);

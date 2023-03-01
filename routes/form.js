@@ -32,9 +32,12 @@ router.get("/form/:id?", auth, async (req, res) => {
   try {
     const OrderId = req.params.id;
     if (!OrderId) return res.status(400).send("OrderId required.");
-    const formToSend = await form.find({ order: OrderID });
+    console.log(OrderId);
+    const formToSend = await form.findOne({ order: OrderId });
+    console.log(formToSend);
     return res.status(200).json(formToSend);
   } catch (error) {
+    console.log(error);
     return res.status(500).json(error);
   }
 });
