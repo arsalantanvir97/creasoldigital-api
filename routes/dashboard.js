@@ -128,9 +128,10 @@ const getPopularPackageData = async (year) => {
 router.get("/user-dashboard", auth, async (req, res) => {
   try {
     const UserId = req.user.user_id;
-    const subscribedPackages = (
-      await order.find({ status: "Active", user: UserId })
-    ).length;
+    const subscribedPackages = await order.find({
+      status: "Active",
+      user: UserId,
+    });
     const posts = await post.find({ user: UserId }).sort({ createdAt: -1 });
     const approvedPosts = posts.filter((p) => p.status === "Approved").length;
     const pendingPosts = posts.filter(
@@ -143,18 +144,23 @@ router.get("/user-dashboard", auth, async (req, res) => {
       rejected: posts.filter((p) => p.status === "Rejected with Comments")
         .length,
     };
+    const timer = subscribedPackages.filter(
+      (pkgs) => pkgs.form_status === "Not Submitted"
+    )[0].form_filltime;
+    const subscribedpkgsLength = subscribedPackages.length;
     const dashboardDataToSend = {
-      subscribedPackages,
+      subscribedPackages: subscribedpkgsLength,
       approvedPosts,
       pendingPosts,
       recentPosts,
       chartData,
+      timer: timer,
     };
     console.log(dashboardDataToSend);
     return res.status(200).json(dashboardDataToSend);
   } catch (error) {
     console.log(error);
-    return res.status(400).json(error);
+    return res.status(500).json(error);
   }
 });
 
