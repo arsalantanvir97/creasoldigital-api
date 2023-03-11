@@ -61,15 +61,33 @@ router.put("/users", auth, async (req, res) => {
   delete updateFields.image;
 
   try {
-    // if (req.files) {
-    //   const profileImage = req.files.profile;
-    //   const profileImageName = userID + "." + profileImage.name.split(".")[1];
-    //   const uploadPath = process.cwd() + "/images/" + profileImageName;
-    //   req.body.image = "/profiles/" + profileImageName;
-    //   profileImage.mv(uploadPath, function (err) {
-    //     if (err) return res.status(500).send(err);
-    //   });
-    // }
+    const updatedUser = await User.findByIdAndUpdate(userID, updateFields, {
+      new: true,
+    });
+    delete updatedUser.password;
+    res.status(202).send({
+      status: true,
+      message: "User updated successfully.",
+      user: updatedUser,
+    });
+  } catch (error) {
+    res.status(500).send(error.message);
+  }
+});
+
+router.put("/users-edited-admin", auth, async (req, res) => {
+  // update a user
+
+  // const userID = req.params.id;
+
+  try {
+    const authUser = await GetUser(req.user.user_id);
+    if (!authUser.is_admin) return res.status(401).send("Unauthorized");
+    const userID = req.body.user_id;
+    const updateFields = { ...req.body };
+    delete updateFields.password;
+    delete updateFields.createdAt;
+    delete updateFields.image;
     const updatedUser = await User.findByIdAndUpdate(userID, updateFields, {
       new: true,
     });
@@ -128,11 +146,50 @@ router.put("/profile-image", auth, async (req, res) => {
   }
 });
 
+router.put("/change-user-image-by-admin", auth, async (req, res) => {
+  try {
+    const authUser = await GetUser(req.user.user_id);
+    if (!authUser.is_admin) return res.status(401).send("Unauthorized");
+    if (req.files) {
+      console.log(req.body.user_id);
+      const userID = req.body.user_id;
+      const profileImage = req.files.profile;
+      const profileImageName = userID + "." + profileImage.name.split(".")[1];
+      const uploadPath = process.cwd() + "/images/" + profileImageName;
+      req.body.image = "/profiles/" + profileImageName;
+      profileImage.mv(uploadPath, function (err) {
+        if (err) return res.status(500).send(err);
+      });
+      const updatedUser = await User.findByIdAndUpdate(
+        userID,
+        { image: req.body.image },
+        {
+          new: true,
+        }
+      );
+      res.status(202).json({
+        staus: true,
+        message: "File uploaded successfully",
+        image: req.body.image,
+      });
+    } else {
+      res.status(200).json({
+        staus: false,
+        message: "Request does not contain a file",
+      });
+    }
+  } catch (error) {
+    res.status(500).send(error.message);
+  }
+});
+
 router.get("/user/:id?", auth, async (req, res) => {
-  const userId = req.params.id || req.user.user_id;
-  const user = await User.findById(userId);
-  delete user.password;
-  res.json(user);
+  const authUser = await GetUser(req.user.user_id);
+  console.log(authUser);
+  if (!authUser.is_admin) return res.status(401).send("Unauthorized");
+  const userId = req.params.id;
+  const user = await GetUser(userId);
+  return res.status(200).json(user);
 });
 
 router.get("/notification", auth, async (req, res) => {
