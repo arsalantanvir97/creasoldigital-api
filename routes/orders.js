@@ -1,14 +1,31 @@
 const express = require("express");
 const router = express.Router();
 const auth = require("../middleware/auth");
-// const Package = require("../model/package");
+const Package = require("../model/package");
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
-const { v4: uuid } = require("uuid");
-const { default: Stripe } = require("stripe");
 const User = require("../model/user");
 const Order = require("../model/order");
 const { createNotification, NotificationType, GetUser } = require("../helpers");
 const payments = require("../model/payments");
+const UserSubscription = require("../model/usersubscription");
+
+
+router.post("/create-payment-intent", async (req, res) => {
+  const { packageID } = req.body
+  const package = await Package.findById(packageID);
+
+  const paymentIntent = await stripe.paymentIntents.create({
+    amount: package.price * 100,
+    currency: "usd",
+    automatic_payment_methods: {
+      enabled: true,
+    },
+  });
+
+  res.send({
+    clientSecret: paymentIntent.client_secret,
+  });
+});
 
 router.get("/orders", auth, async (req, res) => {
   const user = await User.findById(req.user.user_id);
@@ -57,6 +74,181 @@ router.get("/orders", auth, async (req, res) => {
     hasNextPage: page < Math.ceil(count / page),
     hasPrevPage: page > 1,
   });
+});
+
+router.post("/order/create", auth, async (req, res) => {
+  try {
+    // return res.status(200).json(req.body);
+    // const r = await stripe.paymentIntents.retrieve(req.body.paymentIntentClientSecret);
+    const r = await stripe.paymentIntents.retrieve(req.body.paymentIntent);
+    // const { paymentIntent } = data;
+    // console.log('Hello there,', data);
+    // return res.status(200).send(r);
+
+    const { product } = req.body;
+    const { user } = req;
+    try {
+      // Check if customer already exist in stripe
+      const orderToCreate = getOrderToCreate({user_id: req.user.user_id}, product);
+      const newlyCreatedOrder = await Order.create(orderToCreate);
+      const newlyCreatedPayment = await payments.create({
+        amount: product.price,
+        order: newlyCreatedOrder._id,
+        payment_type: orderToCreate.payment_type,
+        user: orderToCreate.user,
+      });
+      const Notification = await createNotification({
+        user: user.user_id,
+        order: newlyCreatedOrder._id,
+        notification_type: NotificationType.Purchase,
+      });
+      return res.status(201).json(newlyCreatedOrder);
+    } catch (error) {
+      return res.status(500).json(error);
+    }
+
+
+  } catch (error) {
+    return res.status(500).send(error.message);
+  }
+});
+
+router.post("/order/subscribe", auth, async (req, res) => {
+  if (req.method != "POST") return res.status(400);
+
+  try {
+    const { packageID, paymentMethod } = req.body;
+
+    const user = await User.findById(req.user.user_id);
+    const package = await Package.findById(packageID);
+
+    // Create a customer
+    let { data: customerList } = await stripe.customers.list({}), customer;
+    const customerExists = customerList.filter(c => c.email === user.email)
+
+    if (customerExists.length === 0) {
+      customer = await stripe.customers.create({
+        email: user.email,
+        name: user.first_name + ' ' + user.last_name,
+        payment_method: paymentMethod,
+        invoice_settings: { default_payment_method: paymentMethod },
+      });
+    } else {
+      customer = customerExists[0];
+    }
+
+    const { data: productsList } = await stripe.products.list({});
+    const productExists = productsList.filter(p => p.name === package.name)
+    let product;
+    if (productExists.length > 0) {
+      product = productExists[0];
+    } else {
+      // Create a product
+      product = await stripe.products.create({
+        name: package.name,
+      });
+    }
+
+    // Create a subscription
+    const subscription = await stripe.subscriptions.create({
+      customer: customer.id,
+      items: [
+        {
+          price_data: {
+            currency: "USD",
+            product: product.id,
+            unit_amount: (package.price) * 100,
+            recurring: {
+              interval: "month",
+            },
+          },
+        },
+      ],
+
+      payment_settings: {
+        payment_method_types: ["card"],
+        save_default_payment_method: "on_subscription",
+      },
+      expand: ["latest_invoice.payment_intent"],
+    });
+
+    // console.log('customer', customer)
+    // console.log('product', product)
+    // console.log('subscription', subscription)
+
+    const orderToCreate = getOrderToCreate({ user_id: user._id }, package, true);
+    const newlyCreatedOrder = await Order.create({
+      ...orderToCreate, is_recurring: true, subscription_detail: subscription, current_period_end: new Date(subscription.current_period_end * 1000).toISOString()
+    });
+    const newlyCreatedPayment = await payments.create({
+      amount: package.price,
+      order: newlyCreatedOrder._id,
+      payment_type: orderToCreate.payment_type,
+      user: orderToCreate.user,
+    });
+
+    await UserSubscription.create({
+      user: user._id,
+      package: packageID,
+      subscription_id: subscription.id,
+      order: newlyCreatedOrder._id,
+    })
+
+    // Send back the client secret for payment
+    res.json({
+      message: "Subscription successfully initiated",
+      clientSecret: subscription.latest_invoice.payment_intent.client_secret,
+    }).status(201);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+router.get("/subscriptions", auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.user_id);
+    const subscriptions = await UserSubscription.find({ user: user._id, status: 'ACTIVE' });
+    res.json(subscriptions);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+router.post("/order/unsubscribe", auth, async (req, res) => {
+  try {
+    let subscriptionID = req.body.subscriptionID, subscription;
+
+    if (req.body.orderID && !subscriptionID) {
+      const order = await Order.findById(req.body.orderID);
+      subscriptionID = order.subscription_detail.id;
+      subscription = await UserSubscription.findOne({ "subscription_id": subscriptionID });
+    } else {
+      subscription = await UserSubscription.findById(subscriptionID);
+    }
+
+    // const user = await User.findById(req.user.user_id);
+    const result = await stripe.subscriptions.update(subscription.subscription_id, { cancel_at_period_end: true });
+    console.log(result, subscription);
+
+    const order = await Order.findById(subscription.order);
+
+    await order.update({
+      cancelled_at: order.current_period_end,
+      subscription_detail: { ...order.subscription_detail, ...result }
+    });
+
+    await subscription.update({
+      status: "cancelled",
+    })
+
+    res.json(subscription);
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Internal server error" });
+  }
 });
 
 router.get("/order/:id?", auth, async (req, res) => {
@@ -190,10 +382,10 @@ const isLeapyear = (year) => {
   }
 };
 
-const getOrderToCreate = (user, product) => {
+const getOrderToCreate = (user, product, isRecurring = false) => {
   const neworder = {
     user: user.user_id,
-    payment_type: "Non Recurrent",
+    payment_type: isRecurring ? "Recurring" : "Non Recurrent",
     pkg_name: product.name,
     pkg_price: product.price,
     pkg_description: product.description,
@@ -218,9 +410,5 @@ const createCharges = (customer, product, token) => {
   return charge;
   // .then((result) => res.status(200).json(result));
 };
-
-router.get("/test", async (req, res) => {
-  res.send("test");
-});
 
 module.exports = router;
