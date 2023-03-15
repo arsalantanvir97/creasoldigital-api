@@ -20,6 +20,10 @@ const Order = new mongoose.Schema(
     pkg_duration: { type: String, required: true },
     pkg_interval: { type: String, required: true },
     medium: { type: String, required: true },
+    is_recurring: { type: Boolean, default: false },
+    subscription_detail: { type: Object, default: null },
+    current_period_end: { type : Date, default: Date.now },
+    cancelled_at: { type : Date, default: null },
     form_status: { type: String, required: true },
     status: { type: String, required: true },
     form_filltime: {

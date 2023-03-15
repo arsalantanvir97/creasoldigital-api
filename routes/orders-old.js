@@ -10,22 +10,6 @@ router.get("/stripe-config", (req, res) => {
   });
 });
 
-router.post("/create-payment-intent", async (req, res) => {
-  const { items } = req.body;
-
-  const paymentIntent = await stripe.paymentIntents.create({
-    amount: 1000,
-    currency: "usd",
-    automatic_payment_methods: {
-      enabled: true,
-    },
-  });
-
-  res.send({
-    clientSecret: paymentIntent.client_secret,
-  });
-});
-
 router.post("/create-checkout-session", async (req, res) => {
   const prices = await stripe.prices.list({
     lookup_keys: [req.body.lookup_key],
