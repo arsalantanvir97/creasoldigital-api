@@ -7,6 +7,24 @@ const fileUpload = require("express-fileupload");
 const path = require("path");
 var bodyParser = require("body-parser");
 
+const local = false;
+let credentials = {};
+
+if (local) {
+  credentials = {
+    key: fs.readFileSync("/etc/apache2/ssl/onlinetestingserver.key", "utf8"),
+    cert: fs.readFileSync("/etc/apache2/ssl/onlinetestingserver.crt", "utf8"),
+    ca: fs.readFileSync("/etc/apache2/ssl/onlinetestingserver.ca")
+  };
+} else {
+  credentials = {
+    key: fs.readFileSync("../certs/ssl.key"),
+    cert: fs.readFileSync("../certs/ssl.crt"),
+    ca: fs.readFileSync("../certs/ca-bundle")
+  };
+}
+
+
 app.use(fileUpload());
 
 app.use(cors());

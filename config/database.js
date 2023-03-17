@@ -3,29 +3,21 @@ const mongoose = require("mongoose");
 const { MONGO_URI } = process.env;
 
 exports.connect = async () => {
-    console.log('trying to connect db')
+    try {
+
+    console.log('trying to connect db',MONGO_URI)
     // Connecting to the database
-    mongoose.set('strictQuery', false)
-    await mongoose
-        .connect(MONGO_URI, {
-            // useNewUrlParser: true,
-            // useUnifiedTopology: true,
-            // // useCreateIndex: true,
-            // // useFindAndModify: false,
-            // autoIndex: true,
-            // // poolSize: 10,
-            // serverSelectionTimeoutMS: 30000,
-            // socketTimeoutMS: 75000,
-            // family: 4,
-            // keepAlive: true,
-            // keepAliveInitialDelay: 300000,
-        })
-        .then(() => {
-            console.log("Successfully connected to database");
-        })
-        .catch((error) => {
-            console.log("database connection failed. exiting now...");
-            console.error(error);
-            process.exit(1);
-        });
+    // mongoose.set('strictQuery', false)
+    await mongoose.connect(MONGO_URI, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+        useCreateIndex: true,
+        useFindAndModify: false,
+      });
+      console.log("\u001b[" + 34 + "m" + `Connected to Database` + "\u001b[0m");
+    } catch (error) {
+      console.error(error.message);
+      // exit process with failure
+      process.exit(1);
+    }
 };

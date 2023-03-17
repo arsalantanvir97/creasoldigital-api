@@ -4,7 +4,7 @@ const auth = require("../middleware/auth");
 const Package = require("../model/package");
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
-router.post("/packages", auth, async (req, res) => {
+router.post("/packages", async (req, res) => {
   await Package.deleteMany();
 
   [

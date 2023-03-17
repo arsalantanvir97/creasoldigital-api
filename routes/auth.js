@@ -71,7 +71,9 @@ authRoutes.post("/login", async (req, res) => {
     }
     // Validate if user exist in our database
     const user = await User.findOne({ email });
-
+if(!user){
+  return res.status(400).send("No User found");
+}
     if (!user.status) return res.status(400).send("User Inactive");
 
     if (user && (await bcrypt.compare(password, user.password))) {
