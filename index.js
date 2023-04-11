@@ -7,7 +7,7 @@ const fs = require("fs");
 const { API_PORT } = process.env;
 const port = process.env.PORT || API_PORT;
 
-const local = true;
+const local = false;
 let credentials = {};
 
 if (local) {
