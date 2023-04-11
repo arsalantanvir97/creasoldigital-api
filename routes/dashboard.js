@@ -7,6 +7,7 @@ const Order = require("../model/order");
 const moment = require("moment");
 const order = require("../model/order");
 const post = require("../model/post");
+const payments = require("../model/payments");
 
 router.get("/dashboard", auth, async (req, res) => {
   const { query } = req;
@@ -18,7 +19,14 @@ router.get("/dashboard", auth, async (req, res) => {
     packageData,
   });
 });
-
+router.get("/paymentloggs", auth, async (req, res) => {
+  const { query } = req;
+  const year = query.year;
+  const graph = await getSalespermonth(year);
+  res.status(200).send({
+    graph,
+  });
+});
 const getGraphData = async (year) => {
   const arr = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
   try {
@@ -124,7 +132,56 @@ const getPopularPackageData = async (year) => {
     return arr;
   }
 };
-
+const getSalespermonth = async (year) => {
+  const arr = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+  try {
+    const start_date = moment().set({ year }).startOf("year").toDate();
+    const end_date = moment().set({ year }).endOf("year").toDate();
+    const query = [
+      {
+        $match: {
+          createdAt: {
+            $gte: start_date,
+            $lte: end_date,
+          },
+        },
+      },
+      {
+        $addFields: {
+          date: {
+            $month: "$createdAt",
+          },
+        },
+      },
+      {
+        $group: {
+          _id: "$date",
+          count: { $sum: "$amount" }
+        },
+      },
+      {
+        $addFields: {
+          month: "$_id",
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          month: 1,
+          count: 1,
+        },
+      },
+    ];
+    const user_data = await payments.aggregate(query);
+    user_data.forEach((data) => {
+      if (data) arr[data.month - 1] = data.count;
+    });
+    return arr;
+  } catch (err) {
+    console.log(err);
+    return arr;
+  }
+};
 router.get("/user-dashboard", auth, async (req, res) => {
   let timer=[]
   try {

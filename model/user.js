@@ -8,6 +8,10 @@ const userSchema = new mongoose.Schema(
     password: { type: String },
     status: { type: Boolean },
     phone: { type: String },
+    fblink: { type: String },
+    instalink: { type: String },
+    address: { type: String },
+
     is_admin: { type: Boolean },
     token: { type: String },
     image: { type: String },

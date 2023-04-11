@@ -178,6 +178,46 @@ authRoutes.get("/profile", auth, async (req, res) => {
   res.status(200).json(user);
 });
 
+authRoutes.post("/updatepassword", async (req, res) => {
+  try {
+    // Get user input
+    const { existingpassword, newpassword, confirm_password, email } = req.body;
+    // Validate user input
+    console.log("req.body", req.body);
+    const user = await User.findOne({ email });
+    const validpassword = await bcrypt.compare(existingpassword, user.password);
+    if (!validpassword) {
+      return res.status(400).json({ message: "Invalid Credentials" });
+    }
+    if (existingpassword === newpassword) {
+      return res.status(400).json({
+        message: "please type new password which is not used earlier",
+      });
+    }
+    //if password and confirm password matches
+    if (newpassword !== confirm_password) {
+      return res
+        .status(400)
+        .json({ message: "confirm password doesnot match" });
+    }
+
+    //hash password
+    const salt = await bcrypt.genSalt(10);
+    user.password = bcrypt.hashSync(newpassword, salt);
+
+    await user.save();
+    res.status(200).json({
+      message: "password updated Successfully",
+    });
+
+
+
+     } catch (err) {
+    console.log(err);
+  }
+});
+
+
 // authRoutes.get("/user/:id?", auth, async (req, res) => {
 //   // console.log();
 //   try {

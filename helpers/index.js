@@ -53,12 +53,25 @@ const sendEmail = (view, receiver, subject, content) => {
 // nftext => Notification Text
 const nftext = {
   Purchase: "has purchased a package.",
+  Approved: "has approved the post.",
+  Rejected: "has rejected the post.",
+  SignUp: "New user signed up.",
+  Feedback: "Feedback received from.",
+  Form: "has not filled the form. Please remind them through email.",
   Comment: "commented on a post.",
+
   PostUpdate: "has update a post.",
 };
 
 const NotificationType = {
   Purchase: "Purchase",
+  Approved: "Approved",
+  Rejected: "Rejected",
+  Form: "Form",
+  SignUp: "SignUp",
+
+  Feedback: "Feedback",
+
   Comment: "Comment",
   PostUpdate: "PostUpdate",
 };
