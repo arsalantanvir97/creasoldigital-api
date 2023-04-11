@@ -1,10 +1,9 @@
 const https = require("https");
-const app = require("./app");
 const express = require("express");
+const app = require("./app");
 
-const server = http.createServer(app);
-const app = express();
 
+const fs = require("fs");
 const { API_PORT } = process.env;
 const port = process.env.PORT || API_PORT;
 
