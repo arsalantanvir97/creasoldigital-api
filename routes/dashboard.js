@@ -190,6 +190,7 @@ router.get("/user-dashboard", auth, async (req, res) => {
       status: "Active",
       user: UserId,
     });
+    
     const posts = await post.find({ user: UserId }).sort({ createdAt: -1 });
     const approvedPosts = posts.filter((p) => p.status === "Approved").length;
     const pendingPosts = posts.filter(

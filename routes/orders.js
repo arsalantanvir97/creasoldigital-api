@@ -5,7 +5,7 @@ const Package = require("../model/package");
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const User = require("../model/user");
 const Order = require("../model/order");
-const { createNotification, NotificationType, GetUser } = require("../helpers");
+const { createNotification, NotificationType, GetUser, sendEmail,sendEmail2 } = require("../helpers");
 const payments = require("../model/payments");
 const UserSubscription = require("../model/usersubscription");
 
@@ -85,7 +85,7 @@ router.post("/order/create", auth, async (req, res) => {
     // console.log('Hello there,', data);
     // return res.status(200).send(r);
 
-    const { product } = req.body;
+    const { product,email } = req.body;
     const { user } = req;
     try {
       // Check if customer already exist in stripe
@@ -97,6 +97,15 @@ router.post("/order/create", auth, async (req, res) => {
         payment_type: orderToCreate.payment_type,
         user: orderToCreate.user,
       });
+      const html = `<p>You have subscribed a package, Please fill the form within 24 hours.
+      \n\n If you want to register on LMS portal visit the link below.            
+      \n\n <br/> https://creasoldigital.com/user/view/form/${newlyCreatedOrder._id}  
+      </p>`;
+await sendEmail('Fill the form',email, "LMS - Enterprise Invitation", html);
+
+      sendEmail2(email,'Fill the form',html, {
+      });
+    
       const Notification = await createNotification({
         user: user.user_id,
         order: newlyCreatedOrder._id,

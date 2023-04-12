@@ -50,6 +50,40 @@ const sendEmail = (view, receiver, subject, content) => {
     );
   });
 };
+const sendEmail2 = (email, subject, html) => {
+  const transport = createTransport({
+    host: process.env.EMAIL_HOST,
+    port: process.env.EMAIL_PORT,
+    auth: {
+      user: process.env.EMAIL_USERNAME,
+      pass: process.env.EMAIL_PASSWORD,
+    },
+  });
+
+  return new Promise((resolve, reject) => {
+    console.log(process.cwd());
+    
+
+        var mailOptions = {
+          from: `"JOBSatPR" ${process.env.EMAIL_FROM}`,
+          to: email,
+          subject: subject,
+          html: html,
+          headers: {},
+        };
+
+        transport.sendMail(mailOptions, (error, info) => {
+          if (error) {
+            reject(error);
+            return console.log(error);
+          }
+          resolve(info);
+          // console.log('Message sent: %s', info.messageId);
+     
+      }
+    );
+  });
+};
 // nftext => Notification Text
 const nftext = {
   Purchase: "has purchased a package.",
@@ -103,4 +137,5 @@ module.exports = {
   createNotification,
   NotificationType,
   GetUser,
+  sendEmail2
 };
