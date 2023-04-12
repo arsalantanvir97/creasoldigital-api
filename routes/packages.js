@@ -76,5 +76,37 @@ router.get("/packages", auth, async (req, res) => {
 
   return res.status(201).send(packages);
 });
+router.get("/packages/:id?", auth, async (req, res) => {
+  try {
+    const package = await Package.findById(req.params.id)
+    console.log("package Fetched");
+    console.log(package);
+    return res.status(200).send(package);
+  } catch (error) {
+    return res.status(500).send(error);
+  }
+});
+router.post("/packages/edit", auth, async (req, res) => {
+  const{id,
+    name,
+price,
+description,
+duration}=req.body
+  try {
+    const package = await Package.findById(id)
+    package.name=name
+    package.price=price
+    package.description=description
+    package.duration=duration
+await package.save()
+    console.log("package Updated");
+    console.log(package);
+    return res.status(200).send(package);
+  } catch (error) {
+    return res.status(500).send(error);
+  }
+});
+
+
 
 module.exports = router;

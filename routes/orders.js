@@ -127,6 +127,42 @@ router.post("/order/create", auth, async (req, res) => {
   }
 });
 
+router.post("/order/reminder", auth, async (req, res) => {
+  try {
+    // return res.status(200).json(req.body);
+    // const r = await stripe.paymentIntents.retrieve(req.body.paymentIntentClientSecret);
+
+    const { id } = req.body;
+    try {
+      const newlyCreatedOrder = await Order.findById(id).populate('user');
+      const email=newlyCreatedOrder.user.email
+      const html = `<p>You have subscribed a package, Please fill the form within 24 hours.
+      \n\n If you want to register on LMS portal visit the link below.            
+      \n\n <br/> https://creasoldigital.com/user/form/${newlyCreatedOrder._id}  
+      </p>`;
+
+      sendEmail2(email,'Fill the form',html, {
+      });
+    
+      // const Notification = await createNotification({
+      //   user: user.user_id,
+      //   order: newlyCreatedOrder._id,
+      //   notification_type: NotificationType.Purchase,
+      // });
+      return res.status(201).json(newlyCreatedOrder);
+    } catch (error) {
+     
+
+      return res.status(500).json(error);
+    }
+
+
+  } catch (error) {
+    return res.status(500).send(error.message);
+  }
+});
+
+
 router.post("/order/subscribe", auth, async (req, res) => {
   if (req.method != "POST") return res.status(400);
 
