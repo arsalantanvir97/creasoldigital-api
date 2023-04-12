@@ -4,7 +4,7 @@ const auth = require("../middleware/auth");
 const User = require("../model/user");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const { sendEmail } = require("../helpers");
+const { sendEmail, NotificationType, createNotification } = require("../helpers");
 const forgetpassword = require("../model/forgetpassword");
 
 authRoutes.post("/register", async (req, res) => {
@@ -38,6 +38,16 @@ authRoutes.post("/register", async (req, res) => {
       phone,
       is_admin: false,
     });
+    let NotificationData={}
+    if (user.is_admin==false) {
+      NotificationData = {
+        created_by: user._id,
+        user: user._id,
+        notification_type: NotificationType.SignUp,
+        isAdmin: false,
+      };
+    }
+    const Notification = await createNotification(NotificationData);
 
     // Create token
     const token = jwt.sign(

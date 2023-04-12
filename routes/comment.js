@@ -14,14 +14,24 @@ router.post("/comment", auth, async (req, res) => {
     const newlyAddedComment = await (
       await comment.create(commentToAdd)
     ).populate("user");
-    const fetchedPost = await post.findByIdAndUpdate(
+    let fetchedPost
+    if(authUser.is_admin){
+       fetchedPost = await post.findByIdAndUpdate(
+        commentToAdd.post,
+        {
+          $push: { comments: newlyAddedComment._id },
+        },
+        { new: true, upsert: true }
+      );
+    }else{
+     fetchedPost = await post.findByIdAndUpdate(
       commentToAdd.post,
       {
         $push: { comments: newlyAddedComment._id },
         status: "Rejected with Comments",
       },
       { new: true, upsert: true }
-    );
+    )}
     console.log(commentToAdd);
     console.log(newlyAddedComment);
     console.log(fetchedPost);
@@ -43,7 +53,7 @@ router.post("/comment", auth, async (req, res) => {
         user: authUser._id,
         post: newlyAddedComment.post,
         order: fetchedPost.order,
-        notification_type: NotificationType.Comment,
+        notification_type: NotificationType.Rejected,
         isAdmin: false,
       };
     }

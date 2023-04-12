@@ -53,6 +53,18 @@ router.post("/post", auth, async (req, res) => {
       order: RelatedOrder._id,
     };
     const NewlyAddedPost = await post.create(PostToAdd);
+    const authUserr = await GetUser(req.user.user_id);
+
+
+    let  NotificationData = {
+      created_by: authUserr._id,
+      user: NewlyAddedPost.user,
+      post: NewlyAddedPost._id,
+      order: NewlyAddedPost.order,
+      notification_type: NotificationType.Created,
+      isAdmin: true,
+    };
+    const Notification = await createNotification(NotificationData);
 
     if (req.files) {
       const authUser = await GetUser(req.user.user_id);
@@ -133,7 +145,7 @@ router.put("/post/:id?", auth, async (req, res) => {
         user: authUser._id,
         post: updatedPost._id,
         order: updatedPost.order,
-        notification_type: NotificationType.PostUpdate,
+        notification_type:NotificationType.Approved,
         isAdmin: false,
       };
     }

@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const auth = require("../middleware/auth");
 const Feedback = require("../model/feedback");
+const { createNotification, NotificationType } = require("../helpers");
 
 router.get("/feedback", auth, async (req, res) => {
   const { query } = req;
@@ -55,6 +56,15 @@ router.post("/feedback", auth, async (req, res) => {
       subject,
       description,
     });
+  let  NotificationData = {
+      // created_by: authUser._id,
+      // user: updatedPost.user,
+      // post: updatedPost._id,
+      // order: updatedPost.order,
+      notification_type: NotificationType.Feedback,
+      isAdmin: true,
+    };
+    const Notification = await createNotification(NotificationData);
 
     // return new feedback
     res.status(201).json(feedback);

@@ -92,7 +92,7 @@ router.post("/order/create", auth, async (req, res) => {
       const orderToCreate = getOrderToCreate({user_id: req.user.user_id}, product);
       const newlyCreatedOrder = await Order.create(orderToCreate);
       const newlyCreatedPayment = await payments.create({
-        amount: product.price,
+        amount: Number(product.price),
         order: newlyCreatedOrder._id,
         payment_type: orderToCreate.payment_type,
         user: orderToCreate.user,
@@ -181,7 +181,7 @@ router.post("/order/subscribe", auth, async (req, res) => {
       ...orderToCreate, is_recurring: true, subscription_detail: subscription, current_period_end: new Date(subscription.current_period_end * 1000).toISOString()
     });
     const newlyCreatedPayment = await payments.create({
-      amount: package.price,
+      amount: Number(package.price),
       order: newlyCreatedOrder._id,
       payment_type: orderToCreate.payment_type,
       user: orderToCreate.user,
@@ -288,7 +288,7 @@ router.post("/payment", auth, async (req, res) => {
     const orderToCreate = getOrderToCreate(user, product);
     const newlyCreatedOrder = await Order.create(orderToCreate);
     const newlyCreatedPayment = await payments.create({
-      amount: product.price,
+      amount: Number(product.price),
       order: newlyCreatedOrder._id,
       payment_type: orderToCreate.payment_type,
       user: orderToCreate.user,

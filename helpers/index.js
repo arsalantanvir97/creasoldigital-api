@@ -59,8 +59,9 @@ const nftext = {
   Feedback: "Feedback received from.",
   Form: "has not filled the form. Please remind them through email.",
   Comment: "commented on a post.",
+  Created: "Admin has created a post.Please review",
 
-  PostUpdate: "has update a post.",
+  PostUpdate: "Admin has updated a post.Please review",
 };
 
 const NotificationType = {
@@ -69,6 +70,7 @@ const NotificationType = {
   Rejected: "Rejected",
   Form: "Form",
   SignUp: "SignUp",
+  Created: "Created",
 
   Feedback: "Feedback",
 
