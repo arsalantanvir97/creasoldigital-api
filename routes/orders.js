@@ -435,6 +435,9 @@ const isLeapyear = (year) => {
 const getOrderToCreate = (user, product, isRecurring = false) => {
   var d = new Date();
 d.setDate(d.getDate() + 1);
+var m = new Date();
+m.setMonth(m.getMonth() + Number(product.duration));
+
 
   const neworder = {
     user: user.user_id,
@@ -447,7 +450,8 @@ d.setDate(d.getDate() + 1);
     medium: "Facebook",
     form_status: "Not Submitted",
     status: "Active",
-    form_filltime: d
+    form_filltime: d,
+    current_period_end:m
   };
   return neworder;
 };
