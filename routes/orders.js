@@ -96,7 +96,6 @@ router.post("/order/create", auth, async (req, res) => {
         order: newlyCreatedOrder._id,
         payment_type: orderToCreate.payment_type,
         user: orderToCreate.user,
-        form_filltime
       });
       const html = `<p>You have subscribed a package, Please fill the form within 24 hours.
       \n\n If you want to register on LMS portal visit the link below.            
@@ -398,6 +397,9 @@ const isLeapyear = (year) => {
 };
 
 const getOrderToCreate = (user, product, isRecurring = false) => {
+  var d = new Date();
+d.setDate(d.getDate() + 1);
+
   const neworder = {
     user: user.user_id,
     payment_type: isRecurring ? "Recurring" : "Non Recurrent",
@@ -409,7 +411,7 @@ const getOrderToCreate = (user, product, isRecurring = false) => {
     medium: "Facebook",
     form_status: "Not Submitted",
     status: "Active",
-    form_filltime: new Date(),
+    form_filltime: d
   };
   return neworder;
 };
