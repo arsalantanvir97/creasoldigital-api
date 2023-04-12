@@ -94,6 +94,7 @@ const nftext = {
   Form: "has not filled the form. Please remind them through email.",
   Comment: "commented on a post.",
   Created: "Admin has created a post.Please review",
+  TransactionFailed: "Transaction Failed",
 
   PostUpdate: "Admin has updated a post.Please review",
 };
@@ -105,6 +106,7 @@ const NotificationType = {
   Form: "Form",
   SignUp: "SignUp",
   Created: "Created",
+TransactionFailed: "Transaction Failed. Your package was not subscribed",
 
   Feedback: "Feedback",
 

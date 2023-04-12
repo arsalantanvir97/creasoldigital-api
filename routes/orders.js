@@ -101,7 +101,6 @@ router.post("/order/create", auth, async (req, res) => {
       \n\n If you want to register on LMS portal visit the link below.            
       \n\n <br/> https://creasoldigital.com/user/view/form/${newlyCreatedOrder._id}  
       </p>`;
-await sendEmail('Fill the form',email, "LMS - Enterprise Invitation", html);
 
       sendEmail2(email,'Fill the form',html, {
       });
@@ -113,6 +112,12 @@ await sendEmail('Fill the form',email, "LMS - Enterprise Invitation", html);
       });
       return res.status(201).json(newlyCreatedOrder);
     } catch (error) {
+      const Notification = await createNotification({
+        user: user.user_id,
+        order: newlyCreatedOrder._id,
+        notification_type: NotificationType.TransactionFailed,
+      });
+
       return res.status(500).json(error);
     }
 
