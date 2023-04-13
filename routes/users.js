@@ -23,6 +23,7 @@ router.get("/users", auth, async (req, res) => {
     perPage = top;
     page = 1;
   }
+  console.log('q',query.q,typeof(query.q))
   filter.is_admin = false;
   const count = await User.find({"$or": [
     { first_name: { '$regex': query.q, '$options': 'i' } },
