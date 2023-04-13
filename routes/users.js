@@ -13,26 +13,30 @@ router.get("/users", auth, async (req, res) => {
 
   var perPage = parseInt(query.perPage) || 10;
 
-  const filter = query.q
-  ? // { $text: { $search: req.query.searchString } }
-  {
-    $or: [
-      { first_name: { '$regex': query.q, '$options': 'i' } },
-    { last_name: { '$regex': query.q, '$options': 'i' } },
-    { email: { '$regex': query.q, '$options': 'i' } }
-    ],
+  var filter = {};
+  if (query.q) {
+    filter = { first_name: { $regex: query.q, $options: "i" } };
   }
-  : {}
+
   var top = parseInt(query.top);
   if (!isNaN(top)) {
     perPage = top;
     page = 1;
   }
-  console.log('q',query.q,typeof(query.q))
   filter.is_admin = false;
-  const count = await User.find(filter).countDocuments();
+  const count = await User.find({"$or": [
+    { first_name: { '$regex': query.q, '$options': 'i' } },
+    { last_name: { '$regex': query.q, '$options': 'i' } },
+    { email: { '$regex': query.q, '$options': 'i' } }
 
-  const data = await User.find(filter, null, {
+]}).countDocuments();
+
+  const data = await User.find({"$or": [
+    { first_name: { '$regex': query.q, '$options': 'i' } },
+    { last_name: { '$regex': query.q, '$options': 'i' } },
+    { email: { '$regex': query.q, '$options': 'i' } }
+
+]}, null, {
     limit: perPage,
     skip: (page - 1) * perPage,
   }).sort({"createdAt": -1});
