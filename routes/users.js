@@ -29,7 +29,7 @@ router.get("/users", auth, async (req, res) => {
   const data = await User.find(filter, null, {
     limit: perPage,
     skip: (page - 1) * perPage,
-  });
+  }).sort({"createdAt": -1});
 
   res.status(200).send({
     total: count,

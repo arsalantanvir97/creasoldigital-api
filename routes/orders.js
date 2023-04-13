@@ -32,7 +32,7 @@ router.get("/orders", auth, async (req, res) => {
   const { query } = req;
 
   var page = parseInt(query.page) || 1; //for next page pass 1 here
-  var perPage = parseInt(query.perPage) || 10;
+  var perPage = parseInt(query.perPage) || 50000;
 
   var filter = {};
   if (!user.is_admin) {
@@ -57,7 +57,7 @@ router.get("/orders", auth, async (req, res) => {
       limit: perPage,
       skip: (page - 1) * perPage,
       sort: { createdAt: -1 },
-    }).populate("user");
+    }).populate("user").sort({"createdAt": -1});;
   } else {
     data = await Order.find(filter, query.fields ? query.fields : null)
       .sort({ createdAt: -1 })
