@@ -25,16 +25,16 @@ router.get("/users", auth, async (req, res) => {
   }
   filter.is_admin = false;
   const count = await User.find({"$or": [
-    { first_name: { '$regex': q, '$options': 'i' } },
-    { last_name: { '$regex': q, '$options': 'i' } },
-    { email: { '$regex': q, '$options': 'i' } }
+    { first_name: { '$regex': query.q, '$options': 'i' } },
+    { last_name: { '$regex': query.q, '$options': 'i' } },
+    { email: { '$regex': query.q, '$options': 'i' } }
 
 ]}).countDocuments();
 
   const data = await User.find({"$or": [
-    { first_name: { '$regex': q, '$options': 'i' } },
-    { last_name: { '$regex': q, '$options': 'i' } },
-    { email: { '$regex': q, '$options': 'i' } }
+    { first_name: { '$regex': query.q, '$options': 'i' } },
+    { last_name: { '$regex': query.q, '$options': 'i' } },
+    { email: { '$regex': query.q, '$options': 'i' } }
 
 ]}, null, {
     limit: perPage,
