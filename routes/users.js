@@ -24,9 +24,19 @@ router.get("/users", auth, async (req, res) => {
     page = 1;
   }
   filter.is_admin = false;
-  const count = await User.find(filter).countDocuments();
+  const count = await User.find({"$or": [
+    { first_name: { '$regex': q, '$options': 'i' } },
+    { last_name: { '$regex': q, '$options': 'i' } },
+    { email: { '$regex': q, '$options': 'i' } }
 
-  const data = await User.find(filter, null, {
+]}).countDocuments();
+
+  const data = await User.find({"$or": [
+    { first_name: { '$regex': q, '$options': 'i' } },
+    { last_name: { '$regex': q, '$options': 'i' } },
+    { email: { '$regex': q, '$options': 'i' } }
+
+]}, null, {
     limit: perPage,
     skip: (page - 1) * perPage,
   }).sort({"createdAt": -1});
