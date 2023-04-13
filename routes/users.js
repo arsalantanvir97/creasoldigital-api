@@ -13,7 +13,7 @@ router.get("/users", auth, async (req, res) => {
 
   var perPage = parseInt(query.perPage) || 10;
 
-  const searchParam = query.q
+  const filter = query.q
   ? // { $text: { $search: req.query.searchString } }
   {
     $or: [
@@ -30,9 +30,9 @@ router.get("/users", auth, async (req, res) => {
   }
   console.log('q',query.q,typeof(query.q))
   filter.is_admin = false;
-  const count = await User.find(searchParam).countDocuments();
+  const count = await User.find(filter).countDocuments();
 
-  const data = await User.find(searchParam, null, {
+  const data = await User.find(filter, null, {
     limit: perPage,
     skip: (page - 1) * perPage,
   }).sort({"createdAt": -1});
