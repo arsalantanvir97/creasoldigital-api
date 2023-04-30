@@ -8,14 +8,14 @@ const notification = require("../model/notification");
 const user = require("../model/user");
 
 const sendEmail = (view, receiver, subject, content) => {
-  const transport = createTransport({
-    host: process.env.EMAIL_HOST,
-    port: process.env.EMAIL_PORT,
+  var smtpConfiq = {
+    service: "Gmail",
     auth: {
-      user: process.env.EMAIL_USERNAME,
-      pass: process.env.EMAIL_PASSWORD,
+      user: 'noreplydummy1256@gmail.com',
+      pass: 'rirl rvjn eqju bemx',
     },
-  });
+  };
+  const transport = createTransport(smtpConfiq);
 
   return new Promise((resolve, reject) => {
     console.log(process.cwd());
