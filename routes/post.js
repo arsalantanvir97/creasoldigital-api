@@ -242,7 +242,8 @@ router.put('/delete-image/:id?', auth, async (req, res) => {
   try {
     const updatedPost = await post.findById(id)
     console.log('id', updatedPost, index)
-    updatedPost.images = updatedPost.images.splice(index, 1)
+    const updatedimaage = updatedPost.images.splice(index, 1)
+    updatedPost.images = updatedimaage
     updatedPost.save()
     const updatedPost2 = await post.findById(id)
     const DataToSend = {
