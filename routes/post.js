@@ -218,7 +218,7 @@ router.put('/post-images/:id?', auth, async (req, res) => {
   }
 })
 
-router.put('/delete-image/:id?', auth, async (req, res) => {
+router.put('/delete-image/:id?', async (req, res) => {
   const { id } = req.params
   const index = JSON.parse(req.body)
 
