@@ -85,7 +85,9 @@ const sendEmail2 = (email, subject, html) => {
 }
 // nftext => Notification Text
 const nftext = {
+  Submission: 'has submitted the form.',
   Purchase: 'has purchased a package.',
+
   Approved: 'has approved the post.',
   Rejected: 'has rejected the post.',
   SignUp: 'New user signed up.',
@@ -107,6 +109,7 @@ const NotificationType = {
   SignUp: 'SignUp',
   Created: 'Created',
   Reminder: 'Reminder',
+  Submission: 'Submission',
 
   TransactionFailed: 'Transaction Failed. Your package was not subscribed',
 
