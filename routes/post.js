@@ -24,8 +24,6 @@ router.get('/post/:id', auth, async (req, res) => {
           model: 'user',
         },
       })
-    console.log('Post Fetched')
-    console.log(PostToSend)
     return res.status(200).json(PostToSend)
   } catch (error) {
     console.log(error)
@@ -43,7 +41,6 @@ router.post('/post', auth, async (req, res) => {
       return res.status(400).json({ message: 'Order not exist!' })
     }
     const user = RelatedOrder.user
-    console.log(RelatedOrder)
     const PostToAdd = {
       user,
       title,
@@ -68,14 +65,11 @@ router.post('/post', auth, async (req, res) => {
     if (req.files) {
       const authUser = await GetUser(req.user.user_id)
       const { files } = req
-      console.log(files['profile[0]'])
       const FileKeys = Object.keys(files)
-      console.log(FileKeys)
       const uploadPath = '/post-images/' + NewlyAddedPost._id + '_'
       const filesSaved = []
       FileKeys.forEach((key) => {
         let file = files[key]
-        console.log(file)
         const FileNameToSave =
           uploadPath + uuid() + '.' + file.name.split('.')[1]
         file.mv(process.cwd() + FileNameToSave, function (err) {
@@ -84,7 +78,6 @@ router.post('/post', auth, async (req, res) => {
         filesSaved.push(FileNameToSave)
       })
 
-      console.log(filesSaved)
       const FetchedPost = await post.findById(NewlyAddedPost._id)
       FetchedPost.images = filesSaved
       const updatedPost = await post.findByIdAndUpdate(
@@ -98,7 +91,6 @@ router.post('/post', auth, async (req, res) => {
           // upsert: true,
         }
       )
-      console.log(updatedPost)
     }
 
     RelatedOrder.posts.push(NewlyAddedPost._id)
@@ -116,8 +108,6 @@ router.put('/post/:id?', auth, async (req, res) => {
     const authUser = await GetUser(req.user.user_id)
     const { id } = req.params
     // const { title, description, status, post_medium } = req.body;
-    console.log(id)
-    console.log({ ...req.body })
     const updatedPost = await post.findByIdAndUpdate(
       id,
       { ...req.body },
@@ -125,7 +115,6 @@ router.put('/post/:id?', auth, async (req, res) => {
         new: true,
       }
     )
-    console.log(updatedPost)
     // Sending Notification
     let NotificationData = {}
     // User will see those notification in which isAdmin is true and user fields of the notification matched with the logged in user.
@@ -160,14 +149,11 @@ router.put('/post-images/:id?', auth, async (req, res) => {
     if (req.files) {
       const authUser = await GetUser(req.user.user_id)
       const { files } = req
-      console.log(files['profile[0]'])
       const FileKeys = Object.keys(files)
-      console.log(FileKeys)
       const uploadPath = '/post-images/' + PostId + '_'
       const filesSaved = []
       FileKeys.forEach((key) => {
         let file = files[key]
-        console.log(file)
         const FileNameToSave =
           uploadPath + uuid() + '.' + file.name.split('.')[1]
         file.mv(process.cwd() + FileNameToSave, function (err) {
@@ -176,7 +162,6 @@ router.put('/post-images/:id?', auth, async (req, res) => {
         filesSaved.push(FileNameToSave)
       })
 
-      console.log(filesSaved)
       const FetchedPost = await post.findById(PostId)
       FetchedPost.images = [...filesSaved, ...FetchedPost.images]
       const updatedPost = await post.findByIdAndUpdate(
@@ -190,13 +175,11 @@ router.put('/post-images/:id?', auth, async (req, res) => {
           // upsert: true,
         }
       )
-      console.log(updatedPost)
       const DataToSend = {
         staus: true,
         message: 'Images uploaded successfully',
         images: updatedPost.images,
       }
-      console.log('Data', DataToSend)
 
       // Sending Notification
       let NotificationData = {}
@@ -241,9 +224,14 @@ router.put('/delete-image/:id?', auth, async (req, res) => {
 
   try {
     const updatedPost = await post.findById(id)
-    console.log('id', updatedPost, index)
+    console.log('id', index)
+    console.log('updatedPost.images', updatedPost.images)
+
     const updatedimaage = updatedPost.images.splice(index, 1)
+    console.log('updatedimaage', updatedimaage)
     updatedPost.images = updatedimaage
+    console.log('updatedPost.images2', updatedPost.images)
+
     updatedPost.save()
     const updatedPost2 = await post.findById(id)
     const DataToSend = {
