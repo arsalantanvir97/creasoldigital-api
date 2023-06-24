@@ -226,10 +226,8 @@ router.put('/delete-image/:id?', async (req, res) => {
     const updatedPost = await post.findById(id)
     console.log('updatedPost.images', updatedPost.images)
 
-    const updatedimaage = updatedPost.images.splice(index, 1)
-    console.log('updatedimaage', updatedimaage)
-    updatedPost.images = updatedimaage
-    console.log('updatedPost.images2', updatedPost.images)
+    const updatedImages = updatedPost.images.filter((image, i) => i !== index)
+    updatedPost.images = updatedImages
 
     updatedPost.save()
     const updatedPost2 = await post.findById(id)
