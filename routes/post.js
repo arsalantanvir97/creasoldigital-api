@@ -221,7 +221,7 @@ router.put('/post-images/:id?', auth, async (req, res) => {
 router.put('/delete-image/:id?', async (req, res) => {
   const { id } = req.params
   const { index } = req.body
-  console.log('index', req.body)
+  console.log('index', index)
   try {
     const updatedPost = await post.findById(id)
     console.log('updatedPost.images', updatedPost.images)
