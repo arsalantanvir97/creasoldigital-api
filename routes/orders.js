@@ -108,7 +108,6 @@ router.post('/order/create', auth, async (req, res) => {
         user: orderToCreate.user,
       })
       const html = `<p>You have subscribed a package, Please fill the form within 24 hours.
-      \n\n If you want to register on LMS portal visit the link below.            
       \n\n <br/> https://creasoldigital.com/user/form/${newlyCreatedOrder._id}  
       </p>`
 
