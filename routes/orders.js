@@ -149,11 +149,11 @@ router.post('/order/reminder', auth, async (req, res) => {
 
       sendEmail2(email, 'Fill the form', html, {})
 
-      // const Notification = await createNotification({
-      //   user: user.user_id,
-      //   order: newlyCreatedOrder._id,
-      //   notification_type: NotificationType.Purchase,
-      // });
+      const Notification = await createNotification({
+        user: newlyCreatedOrder.user._id,
+        order: newlyCreatedOrder._id,
+        notification_type: NotificationType.Reminder,
+      })
       return res.status(201).json(newlyCreatedOrder)
     } catch (error) {
       return res.status(500).json(error)
