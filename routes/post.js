@@ -220,7 +220,8 @@ router.put('/post-images/:id?', auth, async (req, res) => {
 
 router.put('/delete-image/:id?', auth, async (req, res) => {
   const { id } = req.params
-  const { index } = req.body
+  const index = JSON.parse(req.body)
+
   console.log('index', index)
   try {
     const updatedPost = await post.findById(id)
