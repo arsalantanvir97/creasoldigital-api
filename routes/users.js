@@ -202,9 +202,9 @@ router.get('/notification', auth, async (req, res) => {
   try {
     const authUser = await GetUser(req.user.user_id)
     let Notification
-    if (authUser.is_admin) {
-      await notification.updateMany({}, { $set: { isRead: true } })
+    await notification.updateMany({}, { $set: { isRead: true } })
 
+    if (authUser.is_admin) {
       // Admin will always get notification where isAdmin field of notification is false
       Notification = await notification
         .find({ isAdmin: false })
