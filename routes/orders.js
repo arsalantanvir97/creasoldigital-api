@@ -117,6 +117,7 @@ router.post('/order/create', auth, async (req, res) => {
         user: user.user_id,
         order: newlyCreatedOrder._id,
         notification_type: NotificationType.Purchase,
+        isAdmin: false,
       })
       return res.status(201).json(newlyCreatedOrder)
     } catch (error) {
@@ -124,6 +125,7 @@ router.post('/order/create', auth, async (req, res) => {
         user: user.user_id,
         order: newlyCreatedOrder._id,
         notification_type: NotificationType.TransactionFailed,
+        isAdmin: false,
       })
 
       return res.status(500).json(error)
@@ -143,7 +145,6 @@ router.post('/order/reminder', auth, async (req, res) => {
       const newlyCreatedOrder = await Order.findById(id).populate('user')
       const email = newlyCreatedOrder.user.email
       const html = `<p>You have subscribed a package, Please fill the form within 24 hours.
-      \n\n If you want to register on LMS portal visit the link below.            
       \n\n <br/> https://creasoldigital.com/user/form/${newlyCreatedOrder._id}  
       </p>`
 
@@ -364,6 +365,7 @@ router.post('/payment', auth, async (req, res) => {
       user: user.user_id,
       order: newlyCreatedOrder._id,
       notification_type: NotificationType.Purchase,
+      isAdmin: false,
     })
     console.log('Order Created Successfully')
     console.log(newlyCreatedOrder)

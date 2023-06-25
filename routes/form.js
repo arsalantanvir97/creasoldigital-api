@@ -26,6 +26,7 @@ router.post('/form', auth, async (req, res) => {
       user: UserId,
       order: OrderId,
       notification_type: NotificationType.Submission,
+      isAdmin: false,
     })
 
     return res.status(200).json({ message: 'Form submission successful.' })

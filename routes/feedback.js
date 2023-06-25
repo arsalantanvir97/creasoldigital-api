@@ -62,6 +62,7 @@ router.post('/feedback', auth, async (req, res) => {
       user: user.user_id,
       order: feedback._id,
       notification_type: NotificationType.Feedback,
+      isAdmin: false,
     })
     console.log('Notification', Notification)
     // return new feedback
