@@ -124,7 +124,7 @@ authRoutes.post('/emailcheck', async (req, res) => {
     // Validate if user exist in our database
     const user = await User.findOne({ email })
     if (!user) {
-      return res.status(400).send('No User found')
+      return res.status(201).send('No User found')
     }
     // user
     res.status(200).send('Valid Credentials')
