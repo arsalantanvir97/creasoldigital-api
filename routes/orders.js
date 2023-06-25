@@ -6,6 +6,7 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 const User = require('../model/user')
 const Order = require('../model/order')
 const bcrypt = require('bcryptjs')
+const jwt = require('jsonwebtoken')
 
 const {
   createNotification,
