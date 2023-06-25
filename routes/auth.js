@@ -43,16 +43,6 @@ authRoutes.post('/register', async (req, res) => {
       phone,
       is_admin: false,
     })
-    let NotificationData = {}
-    if (user.is_admin == false) {
-      NotificationData = {
-        created_by: user._id,
-        user: user._id,
-        notification_type: NotificationType.SignUp,
-        isAdmin: false,
-      }
-    }
-    const Notification = await createNotification(NotificationData)
 
     // Create token
     const token = jwt.sign(

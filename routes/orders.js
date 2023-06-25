@@ -83,8 +83,31 @@ router.get('/orders', auth, async (req, res) => {
   })
 })
 
-router.post('/order/create', auth, async (req, res) => {
+router.post('/order/registerandsubscription', async (req, res) => {
   try {
+    encryptedPassword = await bcrypt.hash(req.body.password, 10)
+    const user = await User.create({
+      first_name: req.body.first_name,
+      last_name: req.body.last_name,
+      email: req.body.email.toLowerCase(), // sanitize: convert email to lowercase
+      password: encryptedPassword,
+      status: true,
+      phone: req.body.phone,
+      is_admin: false,
+    })
+
+    // Create token
+    const token = jwt.sign(
+      { user_id: user._id, email },
+      process.env.TOKEN_KEY,
+      {
+        expiresIn: '2h',
+      }
+    )
+    delete user.password
+
+    // save user token
+    user.token = token
     // return res.status(200).json(req.body);
     // const r = await stripe.paymentIntents.retrieve(req.body.paymentIntentClientSecret);
     const r = await stripe.paymentIntents.retrieve(req.body.paymentIntent)
@@ -93,13 +116,9 @@ router.post('/order/create', auth, async (req, res) => {
     // return res.status(200).send(r);
 
     const { product, email } = req.body
-    const { user } = req
     try {
       // Check if customer already exist in stripe
-      const orderToCreate = getOrderToCreate(
-        { user_id: req.user.user_id },
-        product
-      )
+      const orderToCreate = getOrderToCreate({ user_id: user._id }, product)
       const newlyCreatedOrder = await Order.create(orderToCreate)
       const newlyCreatedPayment = await payments.create({
         amount: Number(product.price),
@@ -114,7 +133,7 @@ router.post('/order/create', auth, async (req, res) => {
       sendEmail2(email, 'Fill the form', html, {})
 
       const Notification = await createNotification({
-        user: user.user_id,
+        user: user._id,
         order: newlyCreatedOrder._id,
         notification_type: NotificationType.Purchase,
         isAdmin: false,
@@ -122,7 +141,7 @@ router.post('/order/create', auth, async (req, res) => {
       return res.status(201).json(newlyCreatedOrder)
     } catch (error) {
       const Notification = await createNotification({
-        user: user.user_id,
+        user: user._id,
         order: newlyCreatedOrder._id,
         notification_type: NotificationType.TransactionFailed,
         isAdmin: false,
