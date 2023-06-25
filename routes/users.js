@@ -255,7 +255,7 @@ router.get('/getnotification', auth, async (req, res) => {
     if (authUser.is_admin) {
       // Admin will always get notification where isAdmin field of notification is false
       Notification = await notification
-        .find({ isAdmin: false, isRead: false })
+        .find({ isAdmin: false })
         .populate({
           path: 'user',
           select: '-password',
@@ -274,8 +274,6 @@ router.get('/getnotification', auth, async (req, res) => {
       Notification = await notification
         .where('isAdmin')
         .equals(true)
-        .where('isRead')
-        .equals(false)
         .where('user')
         .equals(authUser._id)
         .populate({
