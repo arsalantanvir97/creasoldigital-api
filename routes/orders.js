@@ -89,30 +89,8 @@ router.get('/orders', auth, async (req, res) => {
 router.post('/order/registerandsubscription', async (req, res) => {
   console.log('req.body', req.body)
   try {
-    encryptedPassword = await bcrypt.hash(req.body.password, 10)
-    const userr = await User.create({
-      first_name: req.body.first_name,
-      last_name: req.body.last_name,
-      email: req.body.email.toLowerCase(), // sanitize: convert email to lowercase
-      password: encryptedPassword,
-      status: true,
-      phone: req.body.phone,
-      is_admin: false,
-    })
-    const user = await userr.save()
+    const user = await User.findOne({ email: req.body.email })
     console.log('user', user)
-    // Create token
-    const token = jwt.sign(
-      { user_id: user._id, email },
-      process.env.TOKEN_KEY,
-      {
-        expiresIn: '2h',
-      }
-    )
-    delete user.password
-    console.log(first)
-    // save user token
-    user.token = token
     // return res.status(200).json(req.body);
     // const r = await stripe.paymentIntents.retrieve(req.body.paymentIntentClientSecret);
     const r = await stripe.paymentIntents.retrieve(req.body.paymentIntent)
@@ -245,6 +223,129 @@ router.post('/order/reminder', auth, async (req, res) => {
     }
   } catch (error) {
     return res.status(500).send(error.message)
+  }
+})
+
+router.post('/order/usersignupsubscribe', async (req, res) => {
+  if (req.method != 'POST') return res.status(400)
+
+  try {
+    const { packageID, paymentMethod } = req.body
+    encryptedPassword = await bcrypt.hash(req.body.password, 10)
+    const userr = await User.create({
+      first_name: req.body.first_name,
+      last_name: req.body.last_name,
+      email: req.body.email.toLowerCase(), // sanitize: convert email to lowercase
+      password: encryptedPassword,
+      status: true,
+      phone: req.body.phone,
+      is_admin: false,
+    })
+    const user = await userr.save()
+    console.log('user', user)
+    // Create token
+    const token = jwt.sign(
+      { user_id: user._id, email },
+      process.env.TOKEN_KEY,
+      {
+        expiresIn: '2h',
+      }
+    )
+    delete user.password
+    console.log(first)
+    // save user token
+    user.token = token
+
+    const package = await Package.findById(packageID)
+
+    // Create a customer
+    let { data: customerList } = await stripe.customers.list({}),
+      customer
+    const customerExists = customerList.filter((c) => c.email === user.email)
+
+    if (customerExists.length === 0) {
+      customer = await stripe.customers.create({
+        email: user.email,
+        name: user.first_name + ' ' + user.last_name,
+        payment_method: paymentMethod,
+        invoice_settings: { default_payment_method: paymentMethod },
+      })
+    } else {
+      customer = customerExists[0]
+    }
+
+    const { data: productsList } = await stripe.products.list({})
+    const productExists = productsList.filter((p) => p.name === package.name)
+    let product
+    if (productExists.length > 0) {
+      product = productExists[0]
+    } else {
+      // Create a product
+      product = await stripe.products.create({
+        name: package.name,
+      })
+    }
+
+    // Create a subscription
+    const subscription = await stripe.subscriptions.create({
+      customer: customer.id,
+      items: [
+        {
+          price_data: {
+            currency: 'USD',
+            product: product.id,
+            unit_amount: package.price * 100,
+            recurring: {
+              interval: 'month',
+            },
+          },
+        },
+      ],
+
+      payment_settings: {
+        payment_method_types: ['card'],
+        save_default_payment_method: 'on_subscription',
+      },
+      expand: ['latest_invoice.payment_intent'],
+    })
+
+    // console.log('customer', customer)
+    // console.log('product', product)
+    // console.log('subscription', subscription)
+
+    const orderToCreate = getOrderToCreate({ user_id: user._id }, package, true)
+    const newlyCreatedOrder = await Order.create({
+      ...orderToCreate,
+      is_recurring: true,
+      subscription_detail: subscription,
+      current_period_end: new Date(
+        subscription.current_period_end * 1000
+      ).toISOString(),
+    })
+    const newlyCreatedPayment = await payments.create({
+      amount: Number(package.price),
+      order: newlyCreatedOrder._id,
+      payment_type: orderToCreate.payment_type,
+      user: orderToCreate.user,
+    })
+
+    await UserSubscription.create({
+      user: user._id,
+      package: packageID,
+      subscription_id: subscription.id,
+      order: newlyCreatedOrder._id,
+    })
+
+    // Send back the client secret for payment
+    res
+      .json({
+        message: 'Subscription successfully initiated',
+        clientSecret: subscription.latest_invoice.payment_intent.client_secret,
+      })
+      .status(201)
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ message: 'Internal server error' })
   }
 })
 
