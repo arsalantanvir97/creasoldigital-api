@@ -87,7 +87,7 @@ router.get('/orders', auth, async (req, res) => {
 })
 
 router.post('/order/registerandsubscription', async (req, res) => {
-  console.log('req.body', req.body)
+  console.log('req.body2222', req.body)
   try {
     const {
       product,
@@ -264,15 +264,26 @@ router.post('/order/usersignupsubscribe', async (req, res) => {
   console.log('usersignupsubscribe')
   console.log('req.bodyreq.body', req.body)
   try {
-    const { packageID, paymentMethod } = req.body
-    encryptedPassword = await bcrypt.hash(req.body.password, 10)
+    const {
+      packageID,
+      paymentMethod,
+      first_name,
+      last_name,
+      email,
+      phone,
+      password,
+    } = req.body
+
+    // const user = await User.findOne({ email: req.body.email })
+    // console.log('user', user)
+    encryptedPassword = await bcrypt.hash(password, 10)
     const userr = await User.create({
-      first_name: req.body.first_name,
-      last_name: req.body.last_name,
-      email: req.body.email.toLowerCase(), // sanitize: convert email to lowercase
+      first_name: first_name,
+      last_name: last_name,
+      email: email.toLowerCase(), // sanitize: convert email to lowercase
       password: encryptedPassword,
       status: true,
-      phone: req.body.phone,
+      phone: phone,
       is_admin: false,
     })
     const user = await userr.save()
@@ -286,7 +297,6 @@ router.post('/order/usersignupsubscribe', async (req, res) => {
       }
     )
     delete user.password
-    console.log(first)
     // save user token
     user.token = token
 
