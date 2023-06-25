@@ -246,7 +246,30 @@ authRoutes.post('/updatepassword', async (req, res) => {
     console.log(err)
   }
 })
+authRoutes.post('/adminupdateuserpassword', async (req, res) => {
+  try {
+    // Get user input
+    const { newpassword, confirm_password, email } = req.body
+    // Validate user input
+    console.log('req.body', req.body)
+    const user = await User.findOne({ email })
+    //if password and confirm password matches
+    if (newpassword !== confirm_password) {
+      return res.status(400).json({ message: 'confirm password doesnot match' })
+    }
 
+    //hash password
+    const salt = await bcrypt.genSalt(10)
+    user.password = bcrypt.hashSync(newpassword, salt)
+
+    await user.save()
+    res.status(200).json({
+      message: 'password updated Successfully',
+    })
+  } catch (err) {
+    console.log(err)
+  }
+})
 // authRoutes.get("/user/:id?", auth, async (req, res) => {
 //   // console.log();
 //   try {
