@@ -41,6 +41,7 @@ router.get('/feedback', auth, async (req, res) => {
 
 router.post('/feedback', auth, async (req, res) => {
   try {
+    const { user } = req
     // Get user input
     const { name, email, subject, description } = req.body
 
@@ -58,10 +59,9 @@ router.post('/feedback', auth, async (req, res) => {
     })
 
     const Notification = await createNotification({
-      // user: newlyCreatedOrder.user._id,
-      // order: newlyCreatedOrder._id,
+      user: user.user_id,
+      order: feedback._id,
       notification_type: NotificationType.Feedback,
-      isAdmin: true,
     })
     console.log('Notification', Notification)
     // return new feedback
