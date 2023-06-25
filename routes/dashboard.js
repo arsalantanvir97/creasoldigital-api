@@ -205,9 +205,13 @@ router.get('/user-dashboard', auth, async (req, res) => {
     }
     if (subscribedPackages.length > 0) {
       console.log('subscribedPackages', subscribedPackages)
-      timer = subscribedPackages.filter(
+
+      const fiilter = subscribedPackages.filter(
         (pkgs) => pkgs.form_status === 'Not Submitted'
-      )[0].form_filltime
+      )
+      if (fiilter.length > 0) {
+        timer = fiilter[0].form_filltime
+      }
     }
     const subscribedpkgsLength = subscribedPackages.length
     const dashboardDataToSend = {
