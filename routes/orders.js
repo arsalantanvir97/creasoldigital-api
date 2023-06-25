@@ -169,6 +169,7 @@ router.post('/order/create', auth, async (req, res) => {
     // return res.status(200).send(r);
 
     const { product, email } = req.body
+    console.log('product', product)
     const { user } = req
     try {
       // Check if customer already exist in stripe
@@ -176,7 +177,11 @@ router.post('/order/create', auth, async (req, res) => {
         { user_id: req.user.user_id },
         product
       )
+      console.log('orderToCreate', orderToCreate)
+
       const newlyCreatedOrder = await Order.create(orderToCreate)
+      console.log('newlyCreatedOrder', newlyCreatedOrder)
+
       const newlyCreatedPayment = await payments.create({
         amount: Number(product.price),
         order: newlyCreatedOrder._id,
