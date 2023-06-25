@@ -89,8 +89,33 @@ router.get('/orders', auth, async (req, res) => {
 router.post('/order/registerandsubscription', async (req, res) => {
   console.log('req.body', req.body)
   try {
-    const user = await User.findOne({ email: req.body.email })
-    console.log('user', user)
+    // const user = await User.findOne({ email: req.body.email })
+    // console.log('user', user)
+    encryptedPassword = await bcrypt.hash(req.body.password, 10)
+    const userr = await User.create({
+      first_name: req.body.first_name,
+      last_name: req.body.last_name,
+      email: req.body.email.toLowerCase(), // sanitize: convert email to lowercase
+      password: encryptedPassword,
+      status: true,
+      phone: req.body.phone,
+      is_admin: false,
+    })
+    const user = await userr.save()
+    console.log('userrrrrrr', user)
+    // Create token
+    const token = jwt.sign(
+      { user_id: user._id, email },
+      process.env.TOKEN_KEY,
+      {
+        expiresIn: '2h',
+      }
+    )
+    delete user.password
+    console.log(first)
+    // save user token
+    user.token = token
+
     // return res.status(200).json(req.body);
     // const r = await stripe.paymentIntents.retrieve(req.body.paymentIntentClientSecret);
     const r = await stripe.paymentIntents.retrieve(req.body.paymentIntent)
@@ -228,7 +253,6 @@ router.post('/order/reminder', auth, async (req, res) => {
 
 router.post('/order/usersignupsubscribe', async (req, res) => {
   console.log('usersignupsubscribe')
-  if (req.method != 'POST') return res.status(400)
   console.log('req.bodyreq.body', req.body)
   try {
     const { packageID, paymentMethod } = req.body
@@ -352,7 +376,9 @@ router.post('/order/usersignupsubscribe', async (req, res) => {
 
 router.post('/order/subscribe', auth, async (req, res) => {
   if (req.method != 'POST') return res.status(400)
-
+  console.log(
+    'subscribesubscribesubscribesubscribesubscribesubscribesubscribesubscribesubscribe'
+  )
   try {
     const { packageID, paymentMethod } = req.body
 
