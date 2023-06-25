@@ -115,6 +115,25 @@ authRoutes.post('/login', async (req, res) => {
   }
 })
 
+authRoutes.post('/emailcheck', async (req, res) => {
+  try {
+    // Get user input
+    const { email } = req.body
+
+    // Validate user input
+    // Validate if user exist in our database
+    const user = await User.findOne({ email })
+    if (!user) {
+      return res.status(400).send('No User found')
+    }
+    // user
+    res.status(200).json('Valid data')
+
+    res.status(400).send('Invalid Credentials')
+  } catch (err) {
+    console.log(err)
+  }
+})
 authRoutes.post('/forget-password', async (req, res) => {
   const { email } = req.body
 
