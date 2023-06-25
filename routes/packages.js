@@ -16,6 +16,8 @@ router.post('/packages', async (req, res) => {
         '1 300-word blog',
       ],
       totalposts: 1,
+      duration: 1,
+
       interval: 'month',
     },
     {
@@ -27,6 +29,8 @@ router.post('/packages', async (req, res) => {
         '2 300-word blog',
       ],
       totalposts: 1,
+      duration: 1,
+
       interval: 'month',
     },
     {
@@ -38,6 +42,8 @@ router.post('/packages', async (req, res) => {
         '1 300-word blogs',
       ],
       totalposts: 1,
+      duration: 1,
+
       interval: 'month',
     },
   ].forEach(async (package) => {
@@ -86,13 +92,14 @@ router.get('/packages/:id?', async (req, res) => {
   }
 })
 router.post('/packages/edit', auth, async (req, res) => {
-  const { id, name, price, description, totalposts } = req.body
+  const { id, name, price, description, totalposts, duration } = req.body
   try {
     const package = await Package.findById(id)
     package.name = name
     package.price = price
     package.description = description
     package.totalposts = totalposts
+    package.duration = duration
     await package.save()
     console.log('package Updated')
     console.log(package)
