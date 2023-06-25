@@ -85,6 +85,8 @@ router.get('/orders', auth, async (req, res) => {
 
 router.post('/order/registerandsubscription', async (req, res) => {
   try {
+    const bcrypt = require('bcryptjs')
+
     encryptedPassword = await bcrypt.hash(req.body.password, 10)
     const userr = await User.create({
       first_name: req.body.first_name,
