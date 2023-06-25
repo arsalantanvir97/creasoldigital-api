@@ -50,6 +50,7 @@ const sendEmail = (view, receiver, subject, content) => {
     )
   })
 }
+
 const sendEmail2 = (email, subject, html) => {
   var smtpConfiq = {
     service: 'Gmail',

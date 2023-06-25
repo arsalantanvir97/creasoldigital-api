@@ -8,6 +8,7 @@ const {
   sendEmail,
   NotificationType,
   createNotification,
+  sendEmail2,
 } = require('../helpers')
 const forgetpassword = require('../model/forgetpassword')
 
@@ -154,10 +155,10 @@ authRoutes.post('/adminsenduser-forget-password', async (req, res) => {
   if (!user) {
     res.status(400).send('invalid email address')
   }
-
-  sendEmail('forgetpassword', email, 'forget email', {
-    link: `https://creasoldigital.com/user/setpassword/${email}`,
-  })
+  const html = `<p>You have been sent a link by admin to update your password.
+  \n\n <br/>  https://creasoldigital.com/user/setpassword/${email}  
+  </p>`
+  sendEmail2(email, 'forget email', html, {})
 
   res.status(200).send({
     message: 'Email has been sent check your inbox.',
