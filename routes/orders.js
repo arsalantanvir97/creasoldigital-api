@@ -86,7 +86,7 @@ router.get('/orders', auth, async (req, res) => {
 router.post('/order/registerandsubscription', async (req, res) => {
   try {
     encryptedPassword = await bcrypt.hash(req.body.password, 10)
-    const user = await User.create({
+    const userr = await User.create({
       first_name: req.body.first_name,
       last_name: req.body.last_name,
       email: req.body.email.toLowerCase(), // sanitize: convert email to lowercase
@@ -95,7 +95,8 @@ router.post('/order/registerandsubscription', async (req, res) => {
       phone: req.body.phone,
       is_admin: false,
     })
-
+    const user = await userr.save()
+    console.log('user', user)
     // Create token
     const token = jwt.sign(
       { user_id: user._id, email },
@@ -105,7 +106,7 @@ router.post('/order/registerandsubscription', async (req, res) => {
       }
     )
     delete user.password
-
+    console.log(first)
     // save user token
     user.token = token
     // return res.status(200).json(req.body);
@@ -119,6 +120,7 @@ router.post('/order/registerandsubscription', async (req, res) => {
     try {
       // Check if customer already exist in stripe
       const orderToCreate = getOrderToCreate({ user_id: user._id }, product)
+      console.log('orderToCreate', orderToCreate)
       const newlyCreatedOrder = await Order.create(orderToCreate)
       const newlyCreatedPayment = await payments.create({
         amount: Number(product.price),
@@ -126,6 +128,7 @@ router.post('/order/registerandsubscription', async (req, res) => {
         payment_type: orderToCreate.payment_type,
         user: orderToCreate.user,
       })
+      console.log('newlyCreatedPayment', newlyCreatedPayment)
       const html = `<p>You have subscribed a package, Please fill the form within 24 hours.
       \n\n <br/> https://creasoldigital.com/user/form/${newlyCreatedOrder._id}  
       </p>`
@@ -142,6 +145,58 @@ router.post('/order/registerandsubscription', async (req, res) => {
     } catch (error) {
       const Notification = await createNotification({
         user: user._id,
+        order: newlyCreatedOrder._id,
+        notification_type: NotificationType.TransactionFailed,
+        isAdmin: false,
+      })
+
+      return res.status(500).json(error)
+    }
+  } catch (error) {
+    console.log('error', error)
+    return res.status(500).send(error.message)
+  }
+})
+router.post('/order/create', auth, async (req, res) => {
+  try {
+    // return res.status(200).json(req.body);
+    // const r = await stripe.paymentIntents.retrieve(req.body.paymentIntentClientSecret);
+    const r = await stripe.paymentIntents.retrieve(req.body.paymentIntent)
+    // const { paymentIntent } = data;
+    // console.log('Hello there,', data);
+    // return res.status(200).send(r);
+
+    const { product, email } = req.body
+    const { user } = req
+    try {
+      // Check if customer already exist in stripe
+      const orderToCreate = getOrderToCreate(
+        { user_id: req.user.user_id },
+        product
+      )
+      const newlyCreatedOrder = await Order.create(orderToCreate)
+      const newlyCreatedPayment = await payments.create({
+        amount: Number(product.price),
+        order: newlyCreatedOrder._id,
+        payment_type: orderToCreate.payment_type,
+        user: orderToCreate.user,
+      })
+      const html = `<p>You have subscribed a package, Please fill the form within 24 hours.
+      \n\n <br/> https://creasoldigital.com/user/form/${newlyCreatedOrder._id}  
+      </p>`
+
+      sendEmail2(email, 'Fill the form', html, {})
+
+      const Notification = await createNotification({
+        user: user.user_id,
+        order: newlyCreatedOrder._id,
+        notification_type: NotificationType.Purchase,
+        isAdmin: false,
+      })
+      return res.status(201).json(newlyCreatedOrder)
+    } catch (error) {
+      const Notification = await createNotification({
+        user: user.user_id,
         order: newlyCreatedOrder._id,
         notification_type: NotificationType.TransactionFailed,
         isAdmin: false,
