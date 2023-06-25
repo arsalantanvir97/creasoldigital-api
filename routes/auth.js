@@ -127,9 +127,7 @@ authRoutes.post('/emailcheck', async (req, res) => {
       return res.status(400).send('No User found')
     }
     // user
-    res.status(200).json('Valid data')
-
-    res.status(400).send('Invalid Credentials')
+    res.status(200).send('Valid Credentials')
   } catch (err) {
     console.log(err)
   }
