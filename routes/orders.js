@@ -227,8 +227,9 @@ router.post('/order/reminder', auth, async (req, res) => {
 })
 
 router.post('/order/usersignupsubscribe', async (req, res) => {
+  console.log('usersignupsubscribe')
   if (req.method != 'POST') return res.status(400)
-
+  console.log('req.bodyreq.body', req.body)
   try {
     const { packageID, paymentMethod } = req.body
     encryptedPassword = await bcrypt.hash(req.body.password, 10)
@@ -242,7 +243,7 @@ router.post('/order/usersignupsubscribe', async (req, res) => {
       is_admin: false,
     })
     const user = await userr.save()
-    console.log('user', user)
+    console.log('userrrrrrr', user)
     // Create token
     const token = jwt.sign(
       { user_id: user._id, email },
