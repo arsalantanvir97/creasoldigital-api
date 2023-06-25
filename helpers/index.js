@@ -91,7 +91,7 @@ const nftext = {
   Approved: 'has approved the post.',
   Rejected: 'has rejected the post.',
   SignUp: 'New user signed up.',
-  Feedback: 'Feedback received from.',
+  Feedback: 'sent you a Feedback.',
   Form: 'has not filled the form. Please remind them through email.',
   Comment: 'commented on a post.',
   Created: 'Admin has created a post.Please review',
