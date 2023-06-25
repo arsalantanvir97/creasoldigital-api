@@ -5,6 +5,8 @@ const Package = require('../model/package')
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 const User = require('../model/user')
 const Order = require('../model/order')
+const bcrypt = require('bcryptjs')
+
 const {
   createNotification,
   NotificationType,
@@ -84,9 +86,8 @@ router.get('/orders', auth, async (req, res) => {
 })
 
 router.post('/order/registerandsubscription', async (req, res) => {
+  console.log('req.body', req.body)
   try {
-    const bcrypt = require('bcryptjs')
-
     encryptedPassword = await bcrypt.hash(req.body.password, 10)
     const userr = await User.create({
       first_name: req.body.first_name,
