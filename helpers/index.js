@@ -120,6 +120,7 @@ const NotificationType = {
 }
 
 const createNotification = async (NotificationObject) => {
+  console.log('NotificationObject', NotificationObject)
   try {
     const notification_text = nftext[NotificationObject.notification_type]
     NotificationObject.notification_text = notification_text

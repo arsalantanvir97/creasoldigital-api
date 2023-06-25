@@ -153,6 +153,7 @@ router.post('/order/reminder', auth, async (req, res) => {
         user: newlyCreatedOrder.user._id,
         order: newlyCreatedOrder._id,
         notification_type: NotificationType.Reminder,
+        isAdmin: true,
       })
       return res.status(201).json(newlyCreatedOrder)
     } catch (error) {
