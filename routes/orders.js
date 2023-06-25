@@ -89,16 +89,27 @@ router.get('/orders', auth, async (req, res) => {
 router.post('/order/registerandsubscription', async (req, res) => {
   console.log('req.body', req.body)
   try {
+    const {
+      product,
+      paymentIntent,
+      paymentIntentClientSecret,
+      first_name,
+      last_name,
+      email,
+      phone,
+      password,
+    } = req.body
+
     // const user = await User.findOne({ email: req.body.email })
     // console.log('user', user)
-    encryptedPassword = await bcrypt.hash(req.body.password, 10)
+    encryptedPassword = await bcrypt.hash(password, 10)
     const userr = await User.create({
-      first_name: req.body.first_name,
-      last_name: req.body.last_name,
-      email: req.body.email.toLowerCase(), // sanitize: convert email to lowercase
+      first_name: first_name,
+      last_name: last_name,
+      email: email.toLowerCase(), // sanitize: convert email to lowercase
       password: encryptedPassword,
       status: true,
-      phone: req.body.phone,
+      phone: phone,
       is_admin: false,
     })
     const user = await userr.save()
@@ -112,18 +123,16 @@ router.post('/order/registerandsubscription', async (req, res) => {
       }
     )
     delete user.password
-    console.log(first)
     // save user token
     user.token = token
 
     // return res.status(200).json(req.body);
     // const r = await stripe.paymentIntents.retrieve(req.body.paymentIntentClientSecret);
-    const r = await stripe.paymentIntents.retrieve(req.body.paymentIntent)
+    const r = await stripe.paymentIntents.retrieve(paymentIntent)
     // const { paymentIntent } = data;
     // console.log('Hello there,', data);
     // return res.status(200).send(r);
 
-    const { product, email } = req.body
     try {
       // Check if customer already exist in stripe
       const orderToCreate = getOrderToCreate({ user_id: user._id }, product)
