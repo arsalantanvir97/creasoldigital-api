@@ -2,7 +2,7 @@ const express = require("express")
 const router = express.Router()
 const auth = require("../middleware/auth")
 const Package = require("../model/package")
-const stripe = require("stripe")(process.env.STRIPE_PUBLIC_KEY)
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY)
 
 router.post("/packages", async (req, res) => {
   await Package.deleteMany()
