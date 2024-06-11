@@ -1,12 +1,12 @@
-const express = require('express')
+const express = require("express")
 const router = express.Router()
-const auth = require('../middleware/auth')
-const Package = require('../model/package')
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
-const User = require('../model/user')
-const Order = require('../model/order')
-const bcrypt = require('bcryptjs')
-const jwt = require('jsonwebtoken')
+const auth = require("../middleware/auth")
+const Package = require("../model/package")
+const stripe = require("stripe")(process.env.STRIPE_PUBLIC_KEY)
+const User = require("../model/user")
+const Order = require("../model/order")
+const bcrypt = require("bcryptjs")
+const jwt = require("jsonwebtoken")
 
 const {
   createNotification,
@@ -14,17 +14,17 @@ const {
   GetUser,
   sendEmail,
   sendEmail2,
-} = require('../helpers')
-const payments = require('../model/payments')
-const UserSubscription = require('../model/usersubscription')
+} = require("../helpers")
+const payments = require("../model/payments")
+const UserSubscription = require("../model/usersubscription")
 
-router.post('/create-payment-intent', async (req, res) => {
+router.post("/create-payment-intent", async (req, res) => {
   const { packageID } = req.body
   const package = await Package.findById(packageID)
 
   const paymentIntent = await stripe.paymentIntents.create({
     amount: package.price * 100,
-    currency: 'usd',
+    currency: "usd",
     automatic_payment_methods: {
       enabled: true,
     },
@@ -35,7 +35,7 @@ router.post('/create-payment-intent', async (req, res) => {
   })
 })
 
-router.get('/orders', auth, async (req, res) => {
+router.get("/orders", auth, async (req, res) => {
   const user = await User.findById(req.user.user_id)
   const { query } = req
 
@@ -55,7 +55,7 @@ router.get('/orders', auth, async (req, res) => {
     perPage = top
     page = 1
   }
-  console.log('order listing called')
+  console.log("order listing called")
 
   const count = await Order.find(filter).countDocuments()
 
@@ -66,7 +66,7 @@ router.get('/orders', auth, async (req, res) => {
       skip: (page - 1) * perPage,
       sort: { createdAt: -1 },
     })
-      .populate('user')
+      .populate("user")
       .sort({ createdAt: -1 })
   } else {
     data = await Order.find(filter, query.fields ? query.fields : null)
@@ -86,8 +86,8 @@ router.get('/orders', auth, async (req, res) => {
   })
 })
 
-router.post('/order/registerandsubscription', async (req, res) => {
-  console.log('req.body2222', req.body)
+router.post("/order/registerandsubscription", async (req, res) => {
+  console.log("req.body2222", req.body)
   try {
     const {
       product,
@@ -113,13 +113,13 @@ router.post('/order/registerandsubscription', async (req, res) => {
       is_admin: false,
     })
     const user = await userr.save()
-    console.log('userrrrrrr', user)
+    console.log("userrrrrrr", user)
     // Create token
     const token = jwt.sign(
       { user_id: user._id, email },
       process.env.TOKEN_KEY,
       {
-        expiresIn: '2h',
+        expiresIn: "2h",
       }
     )
     delete user.password
@@ -136,7 +136,7 @@ router.post('/order/registerandsubscription', async (req, res) => {
     try {
       // Check if customer already exist in stripe
       const orderToCreate = getOrderToCreate({ user_id: user._id }, product)
-      console.log('orderToCreate', orderToCreate)
+      console.log("orderToCreate", orderToCreate)
       const newlyCreatedOrder = await Order.create(orderToCreate)
       const newlyCreatedPayment = await payments.create({
         amount: Number(product.price),
@@ -144,12 +144,12 @@ router.post('/order/registerandsubscription', async (req, res) => {
         payment_type: orderToCreate.payment_type,
         user: orderToCreate.user,
       })
-      console.log('newlyCreatedPayment', newlyCreatedPayment)
+      console.log("newlyCreatedPayment", newlyCreatedPayment)
       const html = `<p>You have subscribed a package, Please fill the form within 24 hours.
       \n\n <br/> https://creasoldigital.com/user/form/${newlyCreatedOrder._id}  
       </p>`
 
-      sendEmail2(email, 'Fill the form', html, {})
+      sendEmail2(email, "Fill the form", html, {})
 
       const Notification = await createNotification({
         user: user._id,
@@ -169,11 +169,11 @@ router.post('/order/registerandsubscription', async (req, res) => {
       return res.status(500).json(error)
     }
   } catch (error) {
-    console.log('error', error)
+    console.log("error", error)
     return res.status(500).send(error.message)
   }
 })
-router.post('/order/create', auth, async (req, res) => {
+router.post("/order/create", auth, async (req, res) => {
   try {
     // return res.status(200).json(req.body);
     // const r = await stripe.paymentIntents.retrieve(req.body.paymentIntentClientSecret);
@@ -183,7 +183,7 @@ router.post('/order/create', auth, async (req, res) => {
     // return res.status(200).send(r);
 
     const { product, email } = req.body
-    console.log('product', product)
+    console.log("product", product)
     const { user } = req
     try {
       // Check if customer already exist in stripe
@@ -191,10 +191,10 @@ router.post('/order/create', auth, async (req, res) => {
         { user_id: req.user.user_id },
         product
       )
-      console.log('orderToCreate', orderToCreate)
+      console.log("orderToCreate", orderToCreate)
 
       const newlyCreatedOrder = await Order.create(orderToCreate)
-      console.log('newlyCreatedOrder', newlyCreatedOrder)
+      console.log("newlyCreatedOrder", newlyCreatedOrder)
 
       const newlyCreatedPayment = await payments.create({
         amount: Number(product.price),
@@ -206,7 +206,7 @@ router.post('/order/create', auth, async (req, res) => {
       \n\n <br/> https://creasoldigital.com/user/form/${newlyCreatedOrder._id}  
       </p>`
 
-      sendEmail2(email, 'Fill the form', html, {})
+      sendEmail2(email, "Fill the form", html, {})
 
       const Notification = await createNotification({
         user: user.user_id,
@@ -230,20 +230,20 @@ router.post('/order/create', auth, async (req, res) => {
   }
 })
 
-router.post('/order/reminder', auth, async (req, res) => {
+router.post("/order/reminder", auth, async (req, res) => {
   try {
     // return res.status(200).json(req.body);
     // const r = await stripe.paymentIntents.retrieve(req.body.paymentIntentClientSecret);
 
     const { id } = req.body
     try {
-      const newlyCreatedOrder = await Order.findById(id).populate('user')
+      const newlyCreatedOrder = await Order.findById(id).populate("user")
       const email = newlyCreatedOrder.user.email
       const html = `<p>You have subscribed a package, Please fill the form within 24 hours.
       \n\n <br/> https://creasoldigital.com/user/form/${newlyCreatedOrder._id}  
       </p>`
 
-      sendEmail2(email, 'Fill the form', html, {})
+      sendEmail2(email, "Fill the form", html, {})
 
       const Notification = await createNotification({
         user: newlyCreatedOrder.user._id,
@@ -260,9 +260,9 @@ router.post('/order/reminder', auth, async (req, res) => {
   }
 })
 
-router.post('/order/usersignupsubscribe', async (req, res) => {
-  console.log('usersignupsubscribe')
-  console.log('req.bodyreq.body', req.body)
+router.post("/order/usersignupsubscribe", async (req, res) => {
+  console.log("usersignupsubscribe")
+  console.log("req.bodyreq.body", req.body)
   try {
     const {
       packageID,
@@ -287,13 +287,13 @@ router.post('/order/usersignupsubscribe', async (req, res) => {
       is_admin: false,
     })
     const user = await userr.save()
-    console.log('userrrrrrr', user)
+    console.log("userrrrrrr", user)
     // Create token
     const token = jwt.sign(
       { user_id: user._id, email },
       process.env.TOKEN_KEY,
       {
-        expiresIn: '2h',
+        expiresIn: "2h",
       }
     )
     delete user.password
@@ -310,7 +310,7 @@ router.post('/order/usersignupsubscribe', async (req, res) => {
     if (customerExists.length === 0) {
       customer = await stripe.customers.create({
         email: user.email,
-        name: user.first_name + ' ' + user.last_name,
+        name: user.first_name + " " + user.last_name,
         payment_method: paymentMethod,
         invoice_settings: { default_payment_method: paymentMethod },
       })
@@ -336,21 +336,21 @@ router.post('/order/usersignupsubscribe', async (req, res) => {
       items: [
         {
           price_data: {
-            currency: 'USD',
+            currency: "USD",
             product: product.id,
             unit_amount: package.price * 100,
             recurring: {
-              interval: 'month',
+              interval: "month",
             },
           },
         },
       ],
 
       payment_settings: {
-        payment_method_types: ['card'],
-        save_default_payment_method: 'on_subscription',
+        payment_method_types: ["card"],
+        save_default_payment_method: "on_subscription",
       },
-      expand: ['latest_invoice.payment_intent'],
+      expand: ["latest_invoice.payment_intent"],
     })
 
     // console.log('customer', customer)
@@ -383,20 +383,20 @@ router.post('/order/usersignupsubscribe', async (req, res) => {
     // Send back the client secret for payment
     res
       .json({
-        message: 'Subscription successfully initiated',
+        message: "Subscription successfully initiated",
         clientSecret: subscription.latest_invoice.payment_intent.client_secret,
       })
       .status(201)
   } catch (err) {
     console.error(err)
-    res.status(500).json({ message: 'Internal server error' })
+    res.status(500).json({ message: "Internal server error" })
   }
 })
 
-router.post('/order/subscribe', auth, async (req, res) => {
-  if (req.method != 'POST') return res.status(400)
+router.post("/order/subscribe", auth, async (req, res) => {
+  if (req.method != "POST") return res.status(400)
   console.log(
-    'subscribesubscribesubscribesubscribesubscribesubscribesubscribesubscribesubscribe'
+    "subscribesubscribesubscribesubscribesubscribesubscribesubscribesubscribesubscribe"
   )
   try {
     const { packageID, paymentMethod } = req.body
@@ -412,7 +412,7 @@ router.post('/order/subscribe', auth, async (req, res) => {
     if (customerExists.length === 0) {
       customer = await stripe.customers.create({
         email: user.email,
-        name: user.first_name + ' ' + user.last_name,
+        name: user.first_name + " " + user.last_name,
         payment_method: paymentMethod,
         invoice_settings: { default_payment_method: paymentMethod },
       })
@@ -438,21 +438,21 @@ router.post('/order/subscribe', auth, async (req, res) => {
       items: [
         {
           price_data: {
-            currency: 'USD',
+            currency: "USD",
             product: product.id,
             unit_amount: package.price * 100,
             recurring: {
-              interval: 'month',
+              interval: "month",
             },
           },
         },
       ],
 
       payment_settings: {
-        payment_method_types: ['card'],
-        save_default_payment_method: 'on_subscription',
+        payment_method_types: ["card"],
+        save_default_payment_method: "on_subscription",
       },
-      expand: ['latest_invoice.payment_intent'],
+      expand: ["latest_invoice.payment_intent"],
     })
 
     // console.log('customer', customer)
@@ -485,31 +485,31 @@ router.post('/order/subscribe', auth, async (req, res) => {
     // Send back the client secret for payment
     res
       .json({
-        message: 'Subscription successfully initiated',
+        message: "Subscription successfully initiated",
         clientSecret: subscription.latest_invoice.payment_intent.client_secret,
       })
       .status(201)
   } catch (err) {
     console.error(err)
-    res.status(500).json({ message: 'Internal server error' })
+    res.status(500).json({ message: "Internal server error" })
   }
 })
 
-router.get('/subscriptions', auth, async (req, res) => {
+router.get("/subscriptions", auth, async (req, res) => {
   try {
     const user = await User.findById(req.user.user_id)
     const subscriptions = await UserSubscription.find({
       user: user._id,
-      status: 'ACTIVE',
+      status: "ACTIVE",
     })
     res.json(subscriptions)
   } catch (err) {
     console.error(err)
-    res.status(500).json({ message: 'Internal server error' })
+    res.status(500).json({ message: "Internal server error" })
   }
 })
 
-router.post('/order/unsubscribe', auth, async (req, res) => {
+router.post("/order/unsubscribe", auth, async (req, res) => {
   try {
     let subscriptionID = req.body.subscriptionID,
       subscription
@@ -539,29 +539,29 @@ router.post('/order/unsubscribe', auth, async (req, res) => {
     })
 
     await subscription.update({
-      status: 'cancelled',
+      status: "cancelled",
     })
 
     res.json(subscription)
   } catch (err) {
     console.error(err)
-    res.status(500).json({ message: 'Internal server error' })
+    res.status(500).json({ message: "Internal server error" })
   }
 })
 
-router.get('/order/:id?', auth, async (req, res) => {
+router.get("/order/:id?", auth, async (req, res) => {
   try {
     const order = await Order.findById(req.params.id)
-      .populate('user')
-      .populate({ path: 'posts', options: { sort: { updatedAt: -1 } } })
-    console.log('Order Fetched')
+      .populate("user")
+      .populate({ path: "posts", options: { sort: { updatedAt: -1 } } })
+    console.log("Order Fetched")
     console.log(order)
     return res.status(200).send(order)
   } catch (error) {
     return res.status(500).send(error)
   }
 })
-router.post('/payment', auth, async (req, res) => {
+router.post("/payment", auth, async (req, res) => {
   const { pkg: product, stripe_token: token } = req.body
   const { user } = req
   try {
@@ -574,15 +574,15 @@ router.post('/payment', auth, async (req, res) => {
         email: token.email,
         source: token.id,
       })
-      console.log('Customer Created ')
+      console.log("Customer Created ")
       console.log(customer)
     } else {
       customer = customer.data[0]
-      console.log('Already Existed Created ')
+      console.log("Already Existed Created ")
       console.log(customer)
     }
     await createCharges(customer, product, token)
-    console.log('Charges Created Successfully')
+    console.log("Charges Created Successfully")
     const orderToCreate = getOrderToCreate(user, product)
     const newlyCreatedOrder = await Order.create(orderToCreate)
     const newlyCreatedPayment = await payments.create({
@@ -597,9 +597,9 @@ router.post('/payment', auth, async (req, res) => {
       notification_type: NotificationType.Purchase,
       isAdmin: false,
     })
-    console.log('Order Created Successfully')
+    console.log("Order Created Successfully")
     console.log(newlyCreatedOrder)
-    console.log('Notification')
+    console.log("Notification")
     console.log(Notification)
     return res.status(201).json(newlyCreatedOrder)
   } catch (error) {
@@ -607,7 +607,7 @@ router.post('/payment', auth, async (req, res) => {
     return res.status(500).json(error)
   }
 })
-router.get('/get-user-payments', auth, async (req, res) => {
+router.get("/get-user-payments", auth, async (req, res) => {
   try {
     const authUser = await GetUser(req.user.user_id)
     const { start, end } = req.query
@@ -617,13 +617,13 @@ router.get('/get-user-payments', auth, async (req, res) => {
       filter.user = authUser._id
     }
     if (start) {
-      const [sMonth, sYear] = start.split(',')
+      const [sMonth, sYear] = start.split(",")
       console.log(sMonth)
       console.log(sYear)
       filter.createdAt.$gte = new Date(sYear, sMonth - 1, 1)
     }
     if (end) {
-      const [eMonth, eYear] = end.split(',')
+      const [eMonth, eYear] = end.split(",")
       console.log(eMonth)
       console.log(eYear)
       filter.createdAt.$lt = new Date(
@@ -642,10 +642,10 @@ router.get('/get-user-payments', auth, async (req, res) => {
     console.log(filter)
     const UserPayments = await payments
       .find(filter)
-      .populate('order')
+      .populate("order")
       .populate({
-        path: 'user',
-        select: '-password',
+        path: "user",
+        select: "-password",
       })
       .sort({ createdAt: -1 })
     console.log(UserPayments)
@@ -690,15 +690,15 @@ const getOrderToCreate = (user, product, isRecurring = false) => {
 
   const neworder = {
     user: user.user_id,
-    payment_type: isRecurring ? 'Recurring' : 'Non Recurrent',
+    payment_type: isRecurring ? "Recurring" : "Non Recurrent",
     pkg_name: product.name,
     pkg_price: product.price,
     pkg_description: product.description,
     pkg_duration: product.duration,
     pkg_interval: product.interval,
-    medium: 'Facebook',
-    form_status: 'Not Submitted',
-    status: 'Active',
+    medium: "Facebook",
+    form_status: "Not Submitted",
+    status: "Active",
     form_filltime: d,
     current_period_end: m,
   }
@@ -708,7 +708,7 @@ const getOrderToCreate = (user, product, isRecurring = false) => {
 const createCharges = (customer, product, token) => {
   const charge = stripe.charges.create({
     amount: product.price * 100,
-    currency: 'usd',
+    currency: "usd",
     customer: customer.id,
     receipt_email: token.email,
     description: `${product.name}`,

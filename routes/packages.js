@@ -1,50 +1,50 @@
-const express = require('express')
+const express = require("express")
 const router = express.Router()
-const auth = require('../middleware/auth')
-const Package = require('../model/package')
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
+const auth = require("../middleware/auth")
+const Package = require("../model/package")
+const stripe = require("stripe")(process.env.STRIPE_PUBLIC_KEY)
 
-router.post('/packages', async (req, res) => {
+router.post("/packages", async (req, res) => {
   await Package.deleteMany()
   ;[
     {
-      name: 'Bronze',
+      name: "Bronze",
       price: 95,
       description: [
-        '2 social media posts per',
-        'week (2 platforms)',
-        '1 300-word blog',
+        "2 social media posts per",
+        "week (2 platforms)",
+        "1 300-word blog",
       ],
       totalposts: 1,
       duration: 1,
 
-      interval: 'month',
+      interval: "month",
     },
     {
-      name: 'Silver',
+      name: "Silver",
       price: 190,
       description: [
-        '4 Social media Posts per',
-        'week (4 platforms)',
-        '2 300-word blog',
+        "4 Social media Posts per",
+        "week (4 platforms)",
+        "2 300-word blog",
       ],
       totalposts: 1,
       duration: 1,
 
-      interval: 'month',
+      interval: "month",
     },
     {
-      name: 'Gold',
+      name: "Gold",
       price: 340,
       description: [
-        '6 Social media posts per week (5 platforms)',
-        'week (2 300-word blogs2 platforms)',
-        '1 300-word blogs',
+        "6 Social media posts per week (5 platforms)",
+        "week (2 300-word blogs2 platforms)",
+        "1 300-word blogs",
       ],
       totalposts: 1,
       duration: 1,
 
-      interval: 'month',
+      interval: "month",
     },
   ].forEach(async (package) => {
     const pkg = await Package.findOne({ name: package.name })
@@ -57,18 +57,18 @@ router.post('/packages', async (req, res) => {
   })
 
   return res.status(201).send({
-    message: 'Packages created!',
+    message: "Packages created!",
   })
 })
 
-router.get('/packages/stripe', auth, async (req, res) => {
+router.get("/packages/stripe", auth, async (req, res) => {
   const pkgs = await stripe.prices.list({
     // lookup_keys: ['bronze', 'silver', 'gold'],
-    expand: ['data.product'],
+    expand: ["data.product"],
   })
 
   const pkg = pkgs.data.filter((price) =>
-    ['bronze', 'silver', 'gold'].includes(price.product.name)
+    ["bronze", "silver", "gold"].includes(price.product.name)
   )
   // const product = await stripe.products.list({
   //     active: true
@@ -76,22 +76,22 @@ router.get('/packages/stripe', auth, async (req, res) => {
   return res.status(201).send({ pkg, pkgs })
 })
 
-router.get('/packages', async (req, res) => {
+router.get("/packages", async (req, res) => {
   const packages = await Package.find({})
 
   return res.status(201).send(packages)
 })
-router.get('/packages/:id?', async (req, res) => {
+router.get("/packages/:id?", async (req, res) => {
   try {
     const package = await Package.findById(req.params.id)
-    console.log('package Fetched')
+    console.log("package Fetched")
     console.log(package)
     return res.status(200).send(package)
   } catch (error) {
     return res.status(500).send(error)
   }
 })
-router.post('/packages/edit', auth, async (req, res) => {
+router.post("/packages/edit", auth, async (req, res) => {
   const { id, name, price, description, totalposts, duration } = req.body
   try {
     const package = await Package.findById(id)
@@ -101,7 +101,7 @@ router.post('/packages/edit', auth, async (req, res) => {
     package.totalposts = totalposts
     package.duration = duration
     await package.save()
-    console.log('package Updated')
+    console.log("package Updated")
     console.log(package)
     return res.status(200).send(package)
   } catch (error) {
