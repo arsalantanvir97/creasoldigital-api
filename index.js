@@ -4,13 +4,8 @@ const app = require("./app")
 
 const fs = require("fs")
 const { API_PORT } = process.env
-const port = 4001
-
-const local = false
-let credentials = {}
+const port = process.env.PORT || 4001
 
 app.listen(port, () => {
-  console.log(
-    "\u001b[" + 34 + "m" + `Server started on port: ${port}` + "\u001b[0m"
-  )
+  console.log(`Example app listening on port ${port}`)
 })
