@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "description": "api for the creasol project",
   "main": "index.js",
-  "repository": "https://github.com/syedarifiqbal/creasol-api.git",
-  "author": "syed arif iqbal",
+  "repository": "https://github.com/arsalantanvir97/creasoldigital-api",
+  "author": "arsalan tanveer",
   "license": "MIT",
   "private": true,
   "scripts": {
