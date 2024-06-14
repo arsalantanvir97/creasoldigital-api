@@ -77,7 +77,8 @@ router.get("/packages/stripe", auth, async (req, res) => {
 })
 
 router.get("/packages", async (req, res) => {
-  const packages = await Package.find({})
+  const pacck = await Package.find({})
+  const packages = pacck.filter((fil) => fil.name !== "Trial")
 
   return res.status(201).send(packages)
 })

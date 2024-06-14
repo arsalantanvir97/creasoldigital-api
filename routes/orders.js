@@ -146,7 +146,7 @@ router.post("/order/registerandsubscription", async (req, res) => {
       })
       console.log("newlyCreatedPayment", newlyCreatedPayment)
       const html = `<p>You have subscribed a package, Please fill the form within 24 hours.
-      \n\n <br/> https://creasoldigital.com/user/form/${newlyCreatedOrder._id}  
+      \n\n <br/> https://creasoldigital-d8f2c.web.app/user/form/${newlyCreatedOrder._id}  
       </p>`
 
       sendEmail2(email, "Fill the form", html, {})
@@ -203,7 +203,7 @@ router.post("/order/create", auth, async (req, res) => {
         user: orderToCreate.user,
       })
       const html = `<p>You have subscribed a package, Please fill the form within 24 hours.
-      \n\n <br/> https://creasoldigital.com/user/form/${newlyCreatedOrder._id}  
+      \n\n <br/> https://creasoldigital-d8f2c.web.app/user/form/${newlyCreatedOrder._id}  
       </p>`
 
       sendEmail2(email, "Fill the form", html, {})
@@ -240,7 +240,7 @@ router.post("/order/reminder", auth, async (req, res) => {
       const newlyCreatedOrder = await Order.findById(id).populate("user")
       const email = newlyCreatedOrder.user.email
       const html = `<p>You have subscribed a package, Please fill the form within 24 hours.
-      \n\n <br/> https://creasoldigital.com/user/form/${newlyCreatedOrder._id}  
+      \n\n <br/> https://creasoldigital-d8f2c.web.app/user/form/${newlyCreatedOrder._id}  
       </p>`
 
       sendEmail2(email, "Fill the form", html, {})
